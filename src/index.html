@@ -1,0 +1,829 @@
+<!-- src/index.html -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语单词配对游戏</title>
+    <!-- 引入 Font Awesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* 全局样式重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* 页面背景和布局 */
+        body {
+            background: linear-gradient(135deg, #1a2980, #26d0ce); /* 渐变背景 */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+            overflow-y: auto; /* Allow scrolling for taller content */
+        }
+
+        /* 主容器样式 */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: rgba(255, 255, 255, 0.95); /* 半透明白色背景 */
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* 阴影效果 */
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 头部样式 */
+        header {
+            background: linear-gradient(to right, #4b6cb7, #182848); /* 头部渐变背景 */
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* 标题阴影 */
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* 屏幕切换隐藏/显示 */
+        .screen {
+            display: none;
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Home Screen Styles (Restored to original) */
+        #homeScreen {
+            /* display: block; /* Managed by .screen.active */
+            text-align: center;
+        }
+
+        /* Original .stats styles */
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            flex-wrap: wrap; /* Added for responsiveness */
+            gap: 15px; /* Added for spacing */
+        }
+
+        .stat-item {
+            text-align: center;
+            background: #f0f7ff;
+            padding: 10px 15px;
+            border-radius: 10px;
+            min-width: 100px; /* Kept original min-width */
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.6rem;
+            color: #4b6cb7;
+        }
+
+        /* Original Button Styles (Restored to original) */
+        .btn {
+            background: linear-gradient(to right, #4b6cb7, #182848);
+            color: white;
+            border: none;
+            padding: 13px 25px;
+            margin: 12px;
+            border-radius: 50px; /* 圆角按钮 */
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease; /* 过渡动画 */
+            display: inline-block;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px); /* 悬停上浮 */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(1px); /* 点击下沉 */
+        }
+
+        .btn-secondary {
+            background: linear-gradient(to right, #26d0ce, #1a2980); /* 次要按钮颜色 */
+        }
+
+        /* Original Hero Image/Content */
+        .hero-image {
+            background: linear-gradient(135deg, #4b6cb7, #26d0ce);
+            height: 150px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .hero-content {
+            color: white;
+            text-align: center;
+        }
+
+        .hero-content i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        /* Game Container Layout (for single player) */
+        .game-container { /* used for single player game cards grid */
+            display: grid;
+            /* Adjusted grid columns for better responsiveness based on number of cards */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        /* Specific adjustments for single player card grid for different pair counts */
+        #cardsGrid[data-pair-count="4"] { grid-template-columns: repeat(4, 1fr); } /* 8 cards total */
+        #cardsGrid[data-pair-count="5"] { grid-template-columns: repeat(5, 1fr); } /* 10 cards total */
+        #cardsGrid[data-pair-count="6"] { grid-template-columns: repeat(6, 1fr); } /* 12 cards total */
+        #cardsGrid[data-pair-count="7"], #cardsGrid[data-pair-count="8"] { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); } /* 14 or 16 cards, more flexible */
+
+
+        /* Two-Player Game Specific Layout (New feature, retain these styles) */
+        #twoPlayerGameScreen .game-container { /* This overrides for two player screen */
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        #twoPlayerGameScreen .player-column {
+            flex: 1;
+            min-width: 300px; /* Adjust as needed */
+            max-width: 48%; /* Max width for two columns */
+            background: #f5f9ff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #twoPlayerGameScreen .player-column h2 {
+            text-align: center;
+            color: #182848;
+            border-bottom: 2px solid #4b6cb7;
+            padding-bottom: 10px;
+            font-size: 1.4rem;
+            margin-bottom: 0; /* Remove default margin */
+        }
+
+        #twoPlayerGameScreen .player-card-section {
+            flex: 1; /* Allow card sections to grow */
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(calc(50% - 10px), 1fr)); /* Two columns with gap */
+            gap: 10px;
+            align-content: start; /* Align items to the start of the grid */
+            padding-top: 10px; /* Add some padding from the title */
+        }
+
+
+        /* Card Base Styles (These are for both single and two-player cards, adjust as needed) */
+        .card {
+            background-color: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 15px; /* Adjusted padding for better fit */
+            min-height: 100px; /* Adjusted min-height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em; /* Slightly smaller font for more cards */
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            perspective: 1000px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            width: 100%; /* Ensure card fills grid cell */
+        }
+
+        .card.matched {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #28a745;
+            cursor: default;
+            transform: scale(0.95);
+            opacity: 0.7;
+        }
+
+        .card.selected {
+            background-color: #ffeeba;
+            border-color: #ffc107;
+            box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+            transform: scale(1.05);
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            word-break: break-word; /* Ensure long words break */
+        }
+
+        .card-front {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 2px solid #ddd;
+            z-index: 2;
+            transform: rotateY(0deg);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, #a7d9ff, #6cb7e9); /* Gradient for back */
+            color: #1a2980;
+            border: 2px solid #4b6cb7;
+            transform: rotateY(180deg);
+        }
+
+        /* Scoreboard (Single Player) */
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            color: #182848;
+            background-color: #f5f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        .timer, .score {
+            flex: 1;
+            text-align: center;
+        }
+        .timer span, .score span {
+            font-weight: bold;
+            color: #4b6cb7;
+        }
+
+        /* Edit Screen */
+        .edit-area form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4b6cb7;
+        }
+
+        input[type="text"], input[type="number"], select { /* General input styling */
+            width: 100%; /* Adjusted for better responsiveness */
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus {
+            border-color: #4b6cb7;
+            outline: none;
+            box-shadow: 0 0 5px rgba(75, 108, 183, 0.5);
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #e3f2fd;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .settings-row label {
+            margin-bottom: 0;
+            white-space: nowrap; /* Prevent label from wrapping */
+        }
+
+        .settings-row select,
+        .settings-row input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            flex-grow: 1; /* Allow inputs to grow */
+            max-width: 120px; /* Max width for controls */
+        }
+        .settings-row span {
+            white-space: nowrap;
+        }
+
+        .word-list-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+        }
+
+        .word-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .word-item:last-child {
+            border-bottom: none;
+        }
+
+        .word-item span {
+            font-size: 1.1em;
+            color: #333;
+        }
+        .word-item .word-actions .edit-btn,
+        .word-item .word-actions .delete-btn {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: color 0.2s;
+        }
+
+        .word-item .word-actions .edit-btn {
+            color: #007bff;
+        }
+        .word-item .word-actions .edit-btn:hover {
+            color: #0056b3;
+        }
+
+        .word-item .word-actions .delete-btn {
+            color: #dc3545;
+        }
+        .word-item .word-actions .delete-btn:hover {
+            color: #a71d2a;
+        }
+
+        /* Tutorial Screen */
+        .tutorial-content {
+            font-size: 1.1em;
+            line-height: 1.8;
+            color: #555;
+            text-align: left;
+            background-color: #eef7ff;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .tutorial-content h2 {
+            color: #1a2980;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+        .tutorial-content p {
+            margin-bottom: 10px;
+        }
+        .tutorial-content ol, .tutorial-content ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+        .tutorial-content li {
+            margin-bottom: 8px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Animation for modal appearance */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
+        }
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-content h3 {
+            color: #1a2980;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .modal-button {
+            padding: 10px 25px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .modal-button.confirm {
+            background-color: #28a745;
+            color: white;
+        }
+        .modal-button.confirm:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+        }
+
+        .modal-button.cancel {
+            background-color: #dc3545;
+            color: white;
+        }
+        .modal-button.cancel:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .modal-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .modal-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .modal-message.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .modal-message p {
+            margin: 0;
+            font-size: 1em;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .stats { /* Applied to original .stats */
+                flex-direction: column;
+                gap: 10px; /* Adjusted gap */
+            }
+            .stat-item {
+                min-width: unset; /* Remove min-width on small screens */
+            }
+            .cards-grid, #twoPlayerGameScreen .player-card-section {
+                grid-template-columns: repeat(auto-fit, minmax(calc(50% - 10px), 1fr)); /* 2 columns on mobile */
+                gap: 10px;
+            }
+            #twoPlayerGameScreen .player-column {
+                max-width: 100%; /* Full width on mobile */
+                min-width: unset;
+            }
+            .card {
+                padding: 10px;
+                min-height: 80px;
+                font-size: 1em;
+            }
+            .btn { /* Original button styles */
+                font-size: 1rem; /* Revert to original rem unit */
+                padding: 13px 25px; /* Revert to original padding */
+                margin: 12px auto; /* Centered buttons on mobile */
+                width: 80%; /* Make buttons take more width */
+            }
+            .modal-content {
+                padding: 20px;
+            }
+            .modal-content h3 {
+                font-size: 1.5em;
+            }
+            .settings-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .settings-row select,
+            .settings-row input[type="number"] {
+                margin-left: 0;
+                width: 100%;
+                max-width: unset;
+            }
+            /* Revert h1 font size for mobile specific media query if it was modified previously */
+            h1 {
+                font-size: 1.8rem; /* Original mobile font size */
+            }
+        }
+        /* Further adjust card font size for very small screens if needed */
+        @media (max-width: 480px) {
+            .card {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><i class="fas fa-language"></i> 英语单词配对游戏</h1>
+        <div class="subtitle">提升你的词汇量 - 有趣又高效的学习方式</div>
+    </header>
+
+    <!-- Home Screen -->
+    <div id="homeScreen" class="screen active">
+        <div class="hero-image">
+            <div class="hero-content">
+                <i class="fas fa-brain"></i>
+                <h2>单词配对挑战</h2>
+            </div>
+        </div>
+        <p style="margin: 20px 0; font-size: 1.1rem; line-height: 1.6;">
+            欢迎来到英语单词配对游戏！这是一个帮助你记忆英语单词的互动游戏。<br>
+            匹配英语单词和正确的中文意思，提高你的词汇量！
+        </p>
+
+        <button id="startGameBtn" class="btn">
+            <i class="fas fa-play-circle"></i> 开始单人游戏
+        </button>
+        <button id="startTwoPlayerGameBtn" class="btn btn-secondary">
+            <i class="fas fa-users"></i> 开始双人游戏
+        </button>
+        <button id="editWordsBtn" class="btn">
+            <i class="fas fa-edit"></i> 编辑词库
+        </button>
+        <button id="viewTutorialBtn" class="btn btn-secondary">
+            <i class="fas fa-book"></i> 查看教程
+        </button>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div>单词总数</div>
+                <div class="stat-value" id="totalWords">0</div>
+            </div>
+            <div class="stat-item">
+                <div>游戏次数</div>
+                <div class="stat-value" id="gamesPlayedDisplay">0</div>
+            </div>
+            <div class="stat-item">
+                <div>最高分</div>
+                <div class="stat-value" id="highScoreDisplay">0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Single Player Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div class="score-board">
+            <div class="timer">时间: <span id="time">0</span>s</div>
+            <div class="score">得分: <span id="score">0</span></div>
+        </div>
+        <div class="game-container" id="cardsGrid">
+            <!-- Cards will be dynamically inserted here -->
+        </div>
+        <button class="btn btn-back" id="backToHomeFromGame"><i class="fas fa-home"></i> 返回主页</button>
+        <button class="btn btn-secondary" id="resetGameBtn"><i class="fas fa-redo"></i> 重置游戏</button>
+    </div>
+
+    <!-- Two Player Game Screen -->
+    <div id="twoPlayerGameScreen" class="screen">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h2>双人单词配对挑战</h2>
+            <p>两位玩家分别点击单词和意思进行匹配</p>
+        </div>
+        <div class="game-container">
+            <div class="player-column">
+                <h2><i class="fas fa-user-alt"></i> 玩家1</h2>
+                <div class="player-card-section" id="player1EnglishWords"></div>
+                <div class="player-card-section" id="player1ChineseWords"></div>
+                <div class="player-score" id="player1ScoreDisplay">得分: 0</div>
+            </div>
+
+            <div class="player-column">
+                <h2><i class="fas fa-user-alt"></i> 玩家2</h2>
+                <div class="player-card-section" id="player2EnglishWords"></div>
+                <div class="player-card-section" id="player2ChineseWords"></div>
+                <div class="player-score" id="player2ScoreDisplay">得分: 0</div>
+            </div>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button id="resetTwoPlayerGameBtn" class="btn btn-secondary"><i class="fas fa-redo"></i> 重新开始</button>
+            <button id="backToHomeFromTwoPlayerGame" class="btn btn-back"><i class="fas fa-home"></i> 返回首页</button>
+        </div>
+    </div>
+
+    <!-- Edit Screen -->
+    <div id="editScreen" class="screen">
+        <h2 style="text-align: center; margin-bottom: 20px;">
+            <i class="fas fa-edit"></i> 编辑词库
+        </h2>
+
+        <div class="settings-row">
+            <label for="pairCountSelect">每局单词对数:</label>
+            <select id="pairCountSelect">
+                <option value="4">4对</option>
+                <option value="5">5对</option>
+                <option value="6">6对</option>
+                <option value="7">7对</option>
+                <option value="8">8对</option>
+                <option value="9">9对</option>
+                <option value="10">10对</option>
+                <option value="12">12对</option>
+                <option value="15">15对</option>
+                <option value="20">20对</option>
+            </select>
+            <span>或自定义:</span>
+            <input type="number" id="customPairCountInput" min="4" max="50" value="8">
+        </div>
+
+        <form id="addWordForm">
+            <div class="form-group">
+                <label for="englishWord">英语单词:</label>
+                <input type="text" id="englishWord" placeholder="输入英语单词" required>
+            </div>
+            <div class="form-group">
+                <label for="chineseMeaning">中文意思:</label>
+                <input type="text" id="chineseMeaning" placeholder="输入中文意思" required>
+            </div>
+            <button type="button" class="btn btn-primary" id="addWordBtn"><i class="fas fa-plus"></i> 添加/更新单词</button>
+        </form>
+
+        <h3>我的单词列表:</h3>
+        <div class="word-list-container">
+            <div id="wordList">
+                <!-- Word items will be dynamically inserted here -->
+                <p style="text-align: center; padding: 20px; color: #888;">暂无单词，请添加。</p>
+            </div>
+        </div>
+        <button class="btn btn-back" id="backToHomeFromEdit"><i class="fas fa-home"></i> 返回主页</button>
+    </div>
+
+    <!-- Tutorial Screen -->
+    <div id="tutorialScreen" class="screen">
+        <h2 style="text-align: center; margin-bottom: 20px;">
+            <i class="fas fa-graduation-cap"></i> 游戏教程
+        </h2>
+
+        <div class="tutorial-content">
+            <h2>游戏教程</h2>
+            <p>欢迎来到英语单词配对游戏！这款游戏旨在通过互动的方式帮助您记忆和学习英语单词及其对应的中文意思。</p>
+            <h3>单人游戏玩法：</h3>
+            <ol>
+                <li>点击“开始单人游戏”按钮进入游戏界面。</li>
+                <li>您将看到一系列翻转的卡片。</li>
+                <li>每次点击两张卡片，使其翻开。</li>
+                <li>如果翻开的两张卡片是一个英语单词和其对应的中文意思（配对成功），它们将保持翻开并被标记。</li>
+                <li>如果不是配对，两张卡片将在几秒后自动翻转回去。</li>
+                <li>您的目标是在最短的时间内配对所有单词。</li>
+                <li>游戏结束时会显示您的得分和用时。</li>
+            </ol>
+            <h3>双人游戏玩法：</h3>
+            <ol>
+                <li>点击“开始双人游戏”按钮进入双人游戏界面。</li>
+                <li>屏幕分为左右两部分，分别对应玩家1和玩家2。每个玩家有各自的单词和中文意思卡片区域。</li>
+                <li>两位玩家可以同时点击自己区域内的卡片进行配对。</li>
+                <li>配对逻辑与单人游戏相同，正确配对会增加玩家得分。</li>
+                <li>游戏目标是两位玩家都尽可能快地完成所有配对。</li>
+            </ol>
+            <h3>管理单词：</h3>
+            <ul>
+                <li>点击“管理单词”按钮进入单词管理界面。</li>
+                <li>您可以添加新的英语单词和中文意思。如果单词已存在，系统会提示您是否更新。</li>
+                <li>在单词列表中，您可以编辑或删除已有的单词。</li>
+                <li>您还可以设置每局游戏的单词对数，选择预设值或自定义数量（4-50对）。</li>
+            </ul>
+            <h3>提示：</h3>
+            <ul>
+                <li>通过反复游戏来巩固记忆。</li>
+                <li>您添加的单词会保存在浏览器中，下次打开游戏时依然可用。</li>
+            </ul>
+        </div>
+        <button class="btn btn-back" id="backToHomeFromTutorial"><i class="fas fa-home"></i> 返回主页</button>
+    </div>
+
+    <!-- Custom Modals -->
+    <div id="messageModal" class="modal">
+        <div class="modal-content">
+            <h3 id="messageModalTitle"></h3>
+            <div id="messageModalBody" class="modal-message"></div>
+            <div class="modal-buttons">
+                <button class="modal-button confirm" id="messageModalCloseBtn">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3 id="confirmModalTitle">确认操作</h3>
+            <p id="confirmModalBody"></p>
+            <div class="modal-buttons">
+                <button class="modal-button confirm" id="confirmModalConfirmBtn">确定</button>
+                <button class="modal-button cancel" id="confirmModalCancelBtn">取消</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 引入 Tauri API -->
+<script type="module" src="./main.js"></script>
+</body>
+</html>
