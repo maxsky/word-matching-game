@@ -1,6 +1,6 @@
 [package]
 name = "word-matching-game"
-version = "0.1.0"
+version = "1.0.0"
 description = "A word matching game built with Tauri"
 authors = ["Max Sky"]
 license = "MIT"
@@ -19,7 +19,7 @@ tauri-build = { version = "2.2.0", features = [] }
 
 [dependencies]
 log = "0.4.27"
-serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.140"
 tauri = { version = "2.5.1", features = [] }
 tauri-plugin-log = "2.4.0"
 

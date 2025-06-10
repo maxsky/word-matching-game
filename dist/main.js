@@ -1,22 +1,6 @@
-// src/main.js
 
-// 导入 Tauri API
-import { invoke } from '@tauri-apps/api/core';
+import {loadSettingFromDB, loadWordsFromDB} from './sqlite.js';
 
-// 导入你的 sqlite.js。现在它包含了调用 Rust 后端命令的函数。
-// 确保 sqlite.js 中的函数已被适配为调用 invoke。
-import './sqlite.js';
-
-// ======================================================
-// 将你之前 index.html 中 <script> 标签里的所有 JavaScript 代码粘贴到这里
-// 但请注意：
-// 1. 移除 let SQL; 和 let db = null; 因为它们不再需要
-// 2. 移除 loadFromLocalFileOrCreateNewDb 函数
-// 3. 调整 initializeApp 以调用 init_db
-// ======================================================
-
-// Global variables for game state and UI elements
-// 移除了 SQL 相关的全局变量，因为现在通过 Tauri Command 调用 Rust 后端
 let wordPairs = []; // Array of { english, chinese } objects loaded from DB
 let currentCards = []; // Cards for the current single player game
 let selectedCards = []; // Currently selected cards in single player
@@ -82,6 +66,7 @@ let player2Score = 0;
 let player2MatchedPairs = 0;
 let player2TotalPairs = 0;
 
+
 // Function to display custom message modal
 function displayMessage(message, type = 'info', title = '提示') {
     messageModalTitle.textContent = title;
@@ -96,7 +81,7 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
     confirmModalTitle.textContent = '确认操作'; // Default title
     confirmModalBody.textContent = message;
     confirmModal.classList.add('active'); // Show the modal with animation
-    currentConfirmCallback = onConfirm; // Store the confirm callback
+    currentConfirmCallback = onConfirm; // Store the confirmation callback
 
     // Handle cancel button click
     confirmModalCancelBtn.onclick = () => {
@@ -124,6 +109,7 @@ confirmModalConfirmBtn.addEventListener('click', () => {
 // Function to switch between screens
 function showScreen(screenToShow) {
     const screens = [homeScreen, gameScreen, editScreen, tutorialScreen, twoPlayerGameScreen];
+
     screens.forEach(screen => {
         if (screen === screenToShow) {
             screen.classList.add('active');
@@ -141,31 +127,28 @@ function showScreen(screenToShow) {
 // 在 Tauri 中，数据库在 Rust 后端初始化，前端不需直接检查
 // 仅用于控制前端是否可以进行游戏操作，防止在数据未加载前就开始游戏
 let dataLoaded = false;
-console.log("dataLoaded flag initialized to false.");
-
 
 // Function to initialize the application (load data and settings)
 async function initializeApp() {
     if (dataLoaded) { // Ensure it runs only once
-        console.log("initializeApp: Data already loaded. Skipping.");
+        console.log('initializeApp: Data already loaded. Skipping.');
         return;
     }
-    console.log("initializeApp: Starting data and settings loading.");
+
+    console.log('initializeApp: Starting data and settings loading.');
 
     try {
         // 在 Tauri 中，调用 Rust 后端的 init_db 命令来确保数据库表被创建和默认数据被插入
-        await invoke('init_db');
-        console.log("Rust 后端数据库初始化完成.");
+        // await invoke('init_db');
+        console.log('Rust 后端数据库初始化完成.');
 
-        // 前端现在可以安全地加载数据和设置
-        await loadSettings(); // 加载设置
-        await loadWordsFromDB(); // 加载单词
+        loadWordsFromDB(); // 加载单词
 
         dataLoaded = true; // 标记数据已加载
-        console.log("所有必要数据和功能已加载。");
+        console.log('所有必要数据和功能已加载。');
 
         // After successful initialization, set the initial screen
-        const firstTime = await loadSettingFromDB('firstTime'); // 直接等待结果
+        const firstTime = loadSettingFromDB('firstTime'); // 直接等待结果
         // 'true' 是为了兼容旧的 null 或未设置的情况
         if (firstTime === null || firstTime === 'true') { // 确保是 'true' 字符串或 null (首次启动)
             await saveSettingToDB('firstTime', 'false'); // 保存设置
@@ -175,8 +158,8 @@ async function initializeApp() {
         }
 
     } catch (err) {
-        console.error("加载应用数据失败:", err);
-        displayMessage("加载应用数据失败。请尝试重新启动应用。", "error");
+        console.error('加载应用数据失败:', err);
+        displayMessage('加载应用数据失败。请尝试重新启动应用。', 'error');
     }
 }
 
@@ -192,17 +175,17 @@ function updateStats() {
         pairCountSelect.value = pairCount;
         customPairCountInput.value = pairCount;
     }
-    console.log("Stats updated.");
+    console.log('Stats updated.');
 }
 
 // Single Player Game Logic
 function initGame() {
     if (!dataLoaded) { // 检查数据是否已加载
-        displayMessage("游戏正在加载中，请稍候...", "info");
+        displayMessage('游戏正在加载中，请稍候...', 'info');
         return;
     }
     if (wordPairs.length < pairCount) {
-        displayMessage(`单词库中至少需要 ${pairCount} 个单词才能开始游戏，当前只有 ${wordPairs.length} 个。请添加更多单词。`, "error");
+        displayMessage(`单词库中至少需要 ${pairCount} 个单词才能开始游戏，当前只有 ${wordPairs.length} 个。请添加更多单词。`, 'error');
         showScreen(editScreen); // Go to edit screen to add more words
         return;
     }
@@ -218,8 +201,8 @@ function initGame() {
     // Select random pairs for the game
     const shuffledWordPairs = [...wordPairs].sort(() => 0.5 - Math.random());
     currentCards = shuffledWordPairs.slice(0, pairCount).flatMap(pair => [
-        { type: 'english', value: pair.english, match: pair.chinese },
-        { type: 'chinese', value: pair.chinese, match: pair.english }
+        {type: 'english', value: pair.english, match: pair.chinese},
+        {type: 'chinese', value: pair.chinese, match: pair.english}
     ]);
     currentCards.sort(() => 0.5 - Math.random()); // Shuffle again for card positions
 
@@ -237,7 +220,7 @@ function initGame() {
         timer++;
         timeDisplay.textContent = timer;
     }, 1000);
-    console.log("Single player game initialized.");
+    console.log('Single player game initialized.');
 }
 
 function renderGameCards(targetElement, cardsData, isTwoPlayer = false) {
@@ -258,10 +241,10 @@ function renderGameCards(targetElement, cardsData, isTwoPlayer = false) {
         card.dataset.type = cardData.type; // Store card type
         card.dataset.value = cardData.value; // Store card value
         card.dataset.match = cardData.match; // Store card match value
+
         if (isTwoPlayer) {
             card.dataset.player = cardData.player; // Store player number for two-player game
         }
-
 
         const cardInner = document.createElement('div');
         cardInner.classList.add('card-inner');
@@ -292,7 +275,7 @@ function renderGameCards(targetElement, cardsData, isTwoPlayer = false) {
 function flipCard(cardElement, cardData) {
     if (selectedCards.length < 2 && !cardElement.classList.contains('flipped') && !cardElement.classList.contains('matched')) {
         cardElement.classList.add('flipped', 'selected');
-        selectedCards.push({ element: cardElement, data: cardData });
+        selectedCards.push({element: cardElement, data: cardData});
 
         if (selectedCards.length === 2) {
             setTimeout(checkMatch, 1000); // Check for match after 1 second
@@ -319,11 +302,11 @@ function checkMatch() {
 
         if (matchedPairs === pairCount) {
             clearInterval(timerInterval);
-            displayMessage(`恭喜！您在 ${timer} 秒内完成了游戏！您的得分是 ${score}！`, "success", "游戏结束");
+            displayMessage(`恭喜！您在 ${timer} 秒内完成了游戏！您的得分是 ${score}！`, 'success', '游戏结束');
             if (score > highScore) {
                 highScore = score;
                 saveSettingToDB('highScore', highScore); // Save updated high score
-                displayMessage(`恭喜！您打破了最高分记录！新最高分是 ${highScore}！`, "success", "新纪录！");
+                displayMessage(`恭喜！您打破了最高分记录！新最高分是 ${highScore}！`, 'success', '新纪录！');
             }
             updateStats(); // Update stats on home screen after game ends
         }
@@ -344,11 +327,11 @@ function checkMatch() {
 // Two-Player Game Logic
 function initTwoPlayerGame() {
     if (!dataLoaded) { // 检查数据是否已加载
-        displayMessage("游戏正在加载中，请稍候...", "info");
+        displayMessage('游戏正在加载中，请稍候...', 'info');
         return;
     }
     if (wordPairs.length < pairCount) {
-        displayMessage(`单词库中至少需要 ${pairCount} 个单词才能开始游戏，当前只有 ${wordPairs.length} 个。请添加更多单词。`, "error");
+        displayMessage(`单词库中至少需要 ${pairCount} 个单词才能开始游戏，当前只有 ${wordPairs.length} 个。请添加更多单词。`, 'error');
         showScreen(editScreen);
         return;
     }
@@ -374,14 +357,34 @@ function initTwoPlayerGame() {
     const shuffledPairs = [...wordPairs].sort(() => 0.5 - Math.random()).slice(0, totalGamePairs);
 
     // Prepare cards for Player 1
-    const player1EnglishCardsData = shuffledPairs.map(pair => ({ type: 'english', value: pair.english, match: pair.chinese, player: 1 }));
-    const player1ChineseCardsData = shuffledPairs.map(pair => ({ type: 'chinese', value: pair.chinese, match: pair.english, player: 1 }));
+    const player1EnglishCardsData = shuffledPairs.map(pair => ({
+        type: 'english',
+        value: pair.english,
+        match: pair.chinese,
+        player: 1
+    }));
+    const player1ChineseCardsData = shuffledPairs.map(pair => ({
+        type: 'chinese',
+        value: pair.chinese,
+        match: pair.english,
+        player: 1
+    }));
     player1EnglishCardsData.sort(() => 0.5 - Math.random());
     player1ChineseCardsData.sort(() => 0.5 - Math.random());
 
     // Prepare cards for Player 2 (using potentially the same words, but separate card instances)
-    const player2EnglishCardsData = shuffledPairs.map(pair => ({ type: 'english', value: pair.english, match: pair.chinese, player: 2 }));
-    const player2ChineseCardsData = shuffledPairs.map(pair => ({ type: 'chinese', value: pair.chinese, match: pair.english, player: 2 }));
+    const player2EnglishCardsData = shuffledPairs.map(pair => ({
+        type: 'english',
+        value: pair.english,
+        match: pair.chinese,
+        player: 2
+    }));
+    const player2ChineseCardsData = shuffledPairs.map(pair => ({
+        type: 'chinese',
+        value: pair.chinese,
+        match: pair.english,
+        player: 2
+    }));
     player2EnglishCardsData.sort(() => 0.5 - Math.random());
     player2ChineseCardsData.sort(() => 0.5 - Math.random());
 
@@ -397,7 +400,7 @@ function initTwoPlayerGame() {
     gamesPlayed++;
     saveSettingToDB('gamesPlayed', gamesPlayed);
     updateStats();
-    console.log("Two player game initialized.");
+    console.log('Two player game initialized.');
 }
 
 // Central handler for two-player card clicks
@@ -518,18 +521,20 @@ function checkTwoPlayerGameEnd() {
     }
 }
 
-
 // Edit Screen Logic (Render and Event listeners for adding/editing/deleting words)
 function renderWordList() {
     if (!dataLoaded) { // 检查数据是否已加载
-        displayMessage("数据库功能尚未准备好，无法加载单词列表。", "warning");
+        displayMessage('数据库功能尚未准备好，无法加载单词列表。', 'warning');
         return;
     }
+
     wordList.innerHTML = ''; // Clear existing list
+
     if (wordPairs.length === 0) {
         wordList.innerHTML = '<p style="text-align: center; padding: 20px; color: #888;">暂无单词，请添加。</p>';
         return;
     }
+
     wordPairs.forEach(pair => {
         const wordItem = document.createElement('div');
         wordItem.classList.add('word-item');
@@ -558,7 +563,7 @@ function renderWordList() {
         button.addEventListener('click', (event) => {
             const englishToDelete = event.currentTarget.dataset.english;
             // Use custom confirm modal
-            showConfirmModal(`确定要删除单词 "${englishToDelete}" 吗？`, () => {
+            showConfirmModal(`确定要删除单词 '${englishToDelete}' 吗？`, () => {
                 deleteWordFromDB(englishToDelete); // User confirmed deletion
             });
         });
@@ -592,7 +597,9 @@ document.getElementById('resetTwoPlayerGameBtn').addEventListener('click', () =>
     });
 });
 
-document.getElementById('addWordBtn').addEventListener('click', addNewWord);
+document.getElementById('addWordBtn').addEventListener('click', () => {
+    saveWordToDB();
+});
 
 document.getElementById('backToHomeFromGame').addEventListener('click', () => {
     clearInterval(timerInterval); // Stop timer when leaving game screen
@@ -631,6 +638,6 @@ if (pairCountSelect && customPairCountInput) {
 
 // Initial application setup on DOMContentLoaded
 window.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded event fired. Starting initializeApp.");
+    console.log('DOMContentLoaded event fired. Starting initializeApp.');
     initializeApp(); // This will handle all initial DB loading, settings, and screen display.
 });
