@@ -57,20 +57,20 @@ h1 {
 .screen {
     display: none; /* Correct: default to hidden */
     padding: 30px;
-    flex-grow: 1; /* Allow active screens to grow and fill available space */
-    flex-direction: column; /* Stack content vertically within screens */
     /* Removed fixed min-height from here to allow responsive sizing */
 }
 
 .screen.active {
     display: flex; /* Only active screens get flex display */
+    flex-direction: column; /* Stack content vertically within screens */
+    flex-grow: 1; /* Allow active screens to grow and fill available space */
 }
 
 /* Home Screen Styles */
 #homeScreen {
     text-align: center;
-    justify-content: center; /* Center content vertically within home screen */
-    align-items: center; /* Center content horizontally within home screen */
+    /* Removed justify-content: center; align-items: center; to allow natural flow */
+    flex-grow: 1; /* Keep this to ensure it fills screen */
 }
 
 /* New container for home screen buttons */
@@ -78,8 +78,8 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 12px; /* Same as button margin, for spacing between buttons */
-    margin: 12px 0; /* Match button margins, for spacing above/below buttons */
+    gap: 12px; /* Spacing between buttons */
+    margin: 12px 0; /* Adjust margin to provide space */
 }
 
 
@@ -87,7 +87,8 @@ h1 {
 .stats {
     display: flex;
     justify-content: space-around;
-    margin: 20px 0;
+    margin-top: 30px; /* Increased top margin for more space from buttons */
+    margin-bottom: 20px; /* Keep bottom margin */
     font-size: 1.1rem;
     font-weight: bold;
     flex-wrap: wrap; /* Added for responsiveness */
@@ -161,8 +162,8 @@ h1 {
 
 /* Game Screen layout */
 #gameScreen {
-    /* flex-direction: column; already handled by .screen */
-    /* flex-grow: 1; already handled by .screen */
+    /* flex-direction: column; already handled by .screen.active */
+    /* flex-grow: 1; already handled by .screen.active */
 }
 
 /* Single Player Game Grid */
@@ -197,10 +198,28 @@ h1 {
     min-height: 150px; /* Minimum height for columns */
 }
 
+/* Single Player Game Buttons (New container) */
+.game-buttons {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px; /* Spacing between buttons */
+    margin-top: auto; /* Push buttons to the bottom if screen has extra space */
+    padding-top: 20px; /* Padding above buttons */
+    flex-shrink: 0; /* Prevent from shrinking */
+}
+
+.game-buttons .btn {
+    width: auto; /* Allow buttons to size based on content */
+    min-width: 150px; /* Ensure a reasonable minimum width */
+    max-width: 200px; /* Set a max width to prevent them from becoming too long */
+    margin: 0; /* Reset margin from general .btn to let gap control spacing */
+}
+
 /* Two-Player Game Specific Layout */
 #twoPlayerGameScreen {
-    /* flex-direction: column; already handled by .screen */
-    /* flex-grow: 1; already handled by .screen */
+    /* flex-direction: column; already handled by .screen.active */
+    /* flex-grow: 1; already handled by .screen.active */
 }
 
 .two-player-flex-container {
@@ -359,8 +378,8 @@ h1 {
 
 /* Edit Screen */
 #editScreen, #tutorialScreen {
-    /* flex-grow: 1; handled by .screen */
-    /* flex-direction: column; handled by .screen */
+    /* flex-grow: 1; handled by .screen.active */
+    /* flex-direction: column; handled by .screen.active */
 }
 
 .edit-area form {

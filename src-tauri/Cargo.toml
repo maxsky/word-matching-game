@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "A word matching game built with Tauri"
 authors = ["Max Sky"]
 license = "MIT"
-repository = ""
+repository = "https://github.com/maxsky/word-matching-game"
 edition = "2024"
 rust-version = "1.87.0"
 
