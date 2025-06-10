@@ -27,18 +27,20 @@
             匹配英语单词和正确的中文意思，提高你的词汇量！
         </p>
 
-        <button id="startGameBtn" class="btn">
-            <i class="fas fa-play-circle"></i> 开始单人游戏
-        </button>
-        <button id="startTwoPlayerGameBtn" class="btn btn-secondary">
-            <i class="fas fa-users"></i> 开始双人游戏
-        </button>
-        <button id="editWordsBtn" class="btn">
-            <i class="fas fa-edit"></i> 编辑词库
-        </button>
-        <button id="viewTutorialBtn" class="btn btn-secondary">
-            <i class="fas fa-book"></i> 查看教程
-        </button>
+        <div class="home-buttons"> <!-- New container for buttons -->
+            <button id="startGameBtn" class="btn">
+                <i class="fas fa-play-circle"></i> 开始单人游戏
+            </button>
+            <button id="startTwoPlayerGameBtn" class="btn btn-secondary">
+                <i class="fas fa-users"></i> 开始双人游戏
+            </button>
+            <button id="editWordsBtn" class="btn">
+                <i class="fas fa-edit"></i> 编辑词库
+            </button>
+            <button id="viewTutorialBtn" class="btn btn-secondary">
+                <i class="fas fa-book"></i> 查看教程
+            </button>
+        </div>
 
         <div class="stats">
             <div class="stat-item">
@@ -87,7 +89,7 @@
                     <div class="column-english" id="player1EnglishColumn"></div>
                     <div class="column-chinese" id="player1ChineseColumn"></div>
                 </div>
-                <div class="player-score" id="player1ScoreDisplay">得分: 0</div>
+                <div class="player-score" id="player1ScoreDisplay">得分: 0 <span id="player1Status" class="player-completion-status"></span></div>
             </div>
 
             <div class="player-column">
@@ -96,7 +98,7 @@
                     <div class="column-english" id="player2EnglishColumn"></div>
                     <div class="column-chinese" id="player2ChineseColumn"></div>
                 </div>
-                <div class="player-score" id="player2ScoreDisplay">得分: 0</div>
+                <div class="player-score" id="player2ScoreDisplay">得分: 0 <span id="player2Status" class="player-completion-status"></span></div>
             </div>
         </div>
         <div style="text-align: center; margin-top: 30px;">
@@ -166,7 +168,7 @@
                 <li>点击“开始单人游戏”按钮进入游戏界面。</li>
                 <li>您将看到左侧一列英语单词，右侧一列中文意思。</li>
                 <li>每次选择一个英语单词和一个中文意思。</li>
-                <li>如果选择的两张卡片是一个英语单词和其对应的中文意思（配对成功），它们将直接消失。</li>
+                <li>如果选择的两张卡片是一个英语单词和其对应的中文意思（配对成功），它们将直接消失，下方内容会自动上移。</li>
                 <li>如果不是配对，两张卡片将取消选中并短暂显示错误效果。</li>
                 <li>您的目标是在最短的时间内配对所有单词。</li>
                 <li>游戏结束时会显示您的得分和用时。</li>
@@ -177,7 +179,8 @@
                 <li>屏幕分为左右两部分，分别对应玩家1和玩家2。每个玩家有各自的英语单词列和中文意思列。</li>
                 <li>两位玩家可以同时点击自己区域内的卡片进行配对。</li>
                 <li>配对逻辑与单人游戏相同，正确配对会增加玩家得分并使卡片消失；错误配对则卡片短暂显示错误效果。</li>
-                <li>游戏目标是两位玩家都尽可能快地完成所有配对。</li>
+                <li>当其中一位玩家完成所有配对后，其得分旁会显示“已完成！”。</li>
+                <li>只有当两位玩家都完成所有配对后，游戏才会结束并显示最终结果。</li>
             </ol>
             <h3>管理单词：</h3>
             <ul>

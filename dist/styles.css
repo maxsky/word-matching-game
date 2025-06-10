@@ -25,8 +25,11 @@ body {
     background-color: rgba(255, 255, 255, 0.95); /* 半透明白色背景 */
     border-radius: 20px;
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); /* 阴影效果 */
-    overflow: hidden;
+    overflow: hidden; /* Hide overflow of content within the container */
     position: relative;
+    display: flex; /* Make container a flex container */
+    flex-direction: column; /* Stack header and screens vertically */
+    min-height: calc(100vh - 40px); /* Adjust min-height to fit viewport minus body padding */
 }
 
 /* 头部样式 */
@@ -36,6 +39,7 @@ header {
     padding: 20px;
     text-align: center;
     position: relative;
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 h1 {
@@ -49,21 +53,35 @@ h1 {
     opacity: 0.9;
 }
 
-/* 屏幕切换隐藏/显示 */
+/* 屏幕切换隐藏/显示 - IMPORTANT FIXES HERE */
 .screen {
-    display: none;
+    display: none; /* Correct: default to hidden */
     padding: 30px;
-    min-height: 500px; /* Base min-height, adjusted in media queries */
+    flex-grow: 1; /* Allow active screens to grow and fill available space */
+    flex-direction: column; /* Stack content vertically within screens */
+    /* Removed fixed min-height from here to allow responsive sizing */
 }
 
 .screen.active {
-    display: block;
+    display: flex; /* Only active screens get flex display */
 }
 
-/* Home Screen Styles (Restored to original) */
+/* Home Screen Styles */
 #homeScreen {
     text-align: center;
+    justify-content: center; /* Center content vertically within home screen */
+    align-items: center; /* Center content horizontally within home screen */
 }
+
+/* New container for home screen buttons */
+.home-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px; /* Same as button margin, for spacing between buttons */
+    margin: 12px 0; /* Match button margins, for spacing above/below buttons */
+}
+
 
 /* Original .stats styles */
 .stats {
@@ -74,6 +92,7 @@ h1 {
     font-weight: bold;
     flex-wrap: wrap; /* Added for responsiveness */
     gap: 15px; /* Added for spacing */
+    flex-shrink: 0; /* Prevent stats from shrinking */
 }
 
 .stat-item {
@@ -90,18 +109,18 @@ h1 {
     color: #4b6cb7;
 }
 
-/* Original Button Styles (Restored to original) */
+/* Original Button Styles */
 .btn {
     background: linear-gradient(to right, #4b6cb7, #182848);
     color: white;
     border: none;
     padding: 13px 25px;
-    margin: 12px;
+    /* margin: 12px; -- Removed individual button margin, now handled by .home-buttons gap */
     border-radius: 50px; /* 圆角按钮 */
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.3s ease; /* 过渡动画 */
-    display: inline-block;
+    display: inline-block; /* Ensure inline-block for proper flex wrapping in .home-buttons */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -127,6 +146,7 @@ h1 {
     justify-content: center;
     align-items: center;
     margin: 20px 0;
+    flex-shrink: 0; /* Prevent hero image from shrinking */
 }
 
 .hero-content {
@@ -139,14 +159,23 @@ h1 {
     margin-bottom: 10px;
 }
 
-/* Single Player Game Grid - Adjusted for better responsiveness */
+/* Game Screen layout */
+#gameScreen {
+    /* flex-direction: column; already handled by .screen */
+    /* flex-grow: 1; already handled by .screen */
+}
+
+/* Single Player Game Grid */
 .single-player-game-grid {
     display: flex;
     gap: 20px;
     margin-bottom: 20px;
     justify-content: center;
-    flex-wrap: wrap; /* Allow columns to wrap to next line on small screens */
-    align-items: flex-start; /* Align columns to the top */
+    flex-wrap: wrap;
+    align-items: flex-start;
+    flex-grow: 1; /* Allow the grid to take up available space */
+    min-height: 0; /* Important for flex children with overflow-y auto */
+    padding-bottom: 10px; /* Add some padding at the bottom */
 }
 
 .column-english,
@@ -163,21 +192,31 @@ h1 {
     background-color: #f8f9fa;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     align-self: stretch; /* Make columns fill parent height */
+    overflow-y: auto; /* Allow scrolling within columns if content overflows */
+    flex-shrink: 0; /* Prevent individual cards from shrinking */
+    min-height: 150px; /* Minimum height for columns */
 }
 
-/* Two-Player Game Specific Layout - Adjusted for better spacing and fit */
+/* Two-Player Game Specific Layout */
+#twoPlayerGameScreen {
+    /* flex-direction: column; already handled by .screen */
+    /* flex-grow: 1; already handled by .screen */
+}
+
 .two-player-flex-container {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
-    align-items: flex-start; /* Align player columns to the top */
+    align-items: flex-start;
+    flex-grow: 1; /* Allow this container to take up available space */
+    min-height: 0; /* Important for flex children with overflow-y auto */
 }
 
 #twoPlayerGameScreen .player-column {
     flex: 1;
-    min-width: 320px; /* Slightly wider min-width for better content display */
-    max-width: 48%; /* Max width for two columns */
+    min-width: 380px; /* Increased min-width for better content display */
+    max-width: calc(50% - 10px); /* Max width for two columns, accounting for gap */
     background: #f5f9ff;
     border-radius: 15px;
     padding: 20px;
@@ -186,6 +225,7 @@ h1 {
     flex-direction: column;
     gap: 15px;
     align-self: stretch; /* Make player columns fill parent height */
+    min-height: 0; /* Important for flex children with overflow-y auto */
 }
 
 #twoPlayerGameScreen .player-column h2 {
@@ -195,70 +235,72 @@ h1 {
     padding-bottom: 10px;
     font-size: 1.4rem;
     margin-bottom: 0;
+    flex-shrink: 0; /* Prevent title from shrinking */
 }
 
 .player-game-grid {
-    display: flex; /* This is the container for English and Chinese columns for each player */
+    display: flex;
     gap: 10px;
     flex: 1; /* Allow the grid to fill available space in player column */
-    /* Ensure inner columns don't overflow */
     min-height: 0; /* Important for flex items with scrollable content */
+    overflow: hidden; /* Hide overflow of inner columns within this flex item */
 }
 
 #twoPlayerGameScreen .player-game-grid .column-english,
 #twoPlayerGameScreen .player-game-grid .column-chinese {
-    /* Override generic column styles for two-player inner columns */
-    flex: 1; /* Each inner column takes half width */
-    min-width: unset; /* Remove min-width constraint */
+    flex: 1;
+    min-width: unset;
     max-width: unset;
-    padding: 8px; /* Slightly smaller padding for tighter fit */
-    background-color: #eef7ff; /* Slightly different background for distinction */
-    box-shadow: none; /* Remove extra shadow */
-    border: 1px solid #cceeff; /* Lighter border */
+    padding: 8px;
+    background-color: #eef7ff;
+    box-shadow: none;
+    border: 1px solid #cceeff;
+    overflow-y: auto; /* Allow inner scrolling for two-player columns */
+    min-height: 150px; /* Minimum height for inner columns */
 }
 
-
-/* Card Base Styles - Adjusted */
+/* Card Base Styles */
 .card {
     background-color: #fefefe;
     border: 2px solid #ddd;
     border-radius: 10px;
-    padding: 15px;
-    min-height: 70px; /* Adjusted min-height to fit more cards without excessive scrolling */
+    padding: 12px;
+    min-height: 60px; /* Slightly reduced min-height for cards */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.2em;
+    font-size: 1.1em;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     user-select: none;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    width: 100%; /* Ensure card fills container */
-    text-align: center; /* Center text within card */
-    word-break: break-word; /* Ensure long words break */
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    text-align: center;
+    word-break: break-word;
     opacity: 1;
-    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevent cards from shrinking smaller than their content */
 }
 
 .card.selected {
     background-color: #ffeeba;
     border-color: #ffc107;
-    box-shadow: 0 0 15px rgba(255, 193, 7, 0.5);
+    box-shadow: 0 0 12px rgba(255, 193, 7, 0.5);
     transform: scale(1.02);
 }
 
 .card.matched {
-    opacity: 0; /* Fade out quickly */
-    transform: scale(0.8); /* Shrink quickly */
+    opacity: 0;
+    transform: scale(0.8);
     transition: opacity 0.3s ease-out, transform 0.3s ease-out;
 }
 
-/* New style for incorrect match visual feedback */
+/* Style for incorrect match visual feedback */
 .card.error-match {
-    border-color: #dc3545; /* Red border */
-    background-color: #f8d7da; /* Light red background */
-    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; /* Shake effect */
+    border-color: #dc3545;
+    background-color: #f8d7da;
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     perspective: 1000px;
@@ -284,6 +326,7 @@ h1 {
     padding: 15px;
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0; /* Prevent scoreboard from shrinking */
 }
 .timer, .score {
     flex: 1;
@@ -294,7 +337,32 @@ h1 {
     color: #4b6cb7;
 }
 
+/* Two-Player Score/Status */
+.player-score {
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #182848;
+    margin-top: 10px;
+    flex-shrink: 0; /* Prevent score display from shrinking */
+}
+.player-score span {
+    color: #4b6cb7;
+}
+.player-completion-status {
+    font-size: 0.9em;
+    color: #28a745;
+    margin-left: 8px;
+    display: inline-block; /* Keep it on the same line as score */
+}
+
+
 /* Edit Screen */
+#editScreen, #tutorialScreen {
+    /* flex-grow: 1; handled by .screen */
+    /* flex-direction: column; handled by .screen */
+}
+
 .edit-area form {
     display: flex;
     flex-direction: column;
@@ -336,6 +404,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     background-color: #e3f2fd;
     border-radius: 10px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0; /* Prevent settings from shrinking */
 }
 
 .settings-row label {
@@ -357,53 +426,15 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 }
 
 .word-list-container {
-    max-height: 400px;
+    max-height: 400px; /* Base max-height */
     overflow-y: auto;
     border: 1px solid #ddd;
     border-radius: 10px;
     background-color: #f8f9fa;
     box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
     margin-top: 20px;
-}
-
-.word-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    border-bottom: 1px solid #eee;
-}
-
-.word-item:last-child {
-    border-bottom: none;
-}
-
-.word-item span {
-    font-size: 1.1em;
-    color: #333;
-}
-.word-item .word-actions .edit-btn,
-.word-item .word-actions .delete-btn {
-    background: none;
-    border: none;
-    font-size: 1.2em;
-    cursor: pointer;
-    margin-left: 10px;
-    transition: color 0.2s;
-}
-
-.word-item .word-actions .edit-btn {
-    color: #007bff;
-}
-.word-item .word-actions .edit-btn:hover {
-    color: #0056b3;
-}
-
-.word-item .word-actions .delete-btn {
-    color: #dc3545;
-}
-.word-item .word-actions .delete-btn:hover {
-    color: #a71d2a;
+    flex-grow: 1; /* Allow word list to grow */
+    min-height: 0; /* Important for flex children with overflow-y auto */
 }
 
 /* Tutorial Screen */
@@ -416,6 +447,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 0; /* Important for flex children with overflow-y auto */
 }
 .tutorial-content h2 {
     color: #1a2980;
@@ -436,18 +470,17 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
 /* Modal Styles */
 .modal {
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Animation for modal appearance */
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -553,6 +586,9 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 
 /* Responsive Adjustments - Refined */
 @media (max-width: 768px) {
+    .container {
+        min-height: unset; /* Allow container height to adjust on mobile */
+    }
     .stats {
         flex-direction: column;
         gap: 10px;
@@ -560,14 +596,23 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     .stat-item {
         min-width: unset;
     }
+    .home-buttons {
+        flex-direction: column; /* Stack buttons vertically on small screens */
+        align-items: center; /* Center stacked buttons */
+    }
+    .btn {
+        width: 80%; /* Make buttons take more width */
+        margin: 6px auto; /* Adjust margin for stacked buttons */
+    }
     /* Single player game columns stack vertically */
     .single-player-game-grid {
         flex-direction: column;
-        gap: 15px; /* Larger gap for columns when stacked */
+        gap: 15px;
     }
     .column-english, .column-chinese {
-        min-width: 100%; /* Full width when stacked */
+        min-width: 100%;
         max-width: 100%;
+        min-height: 100px; /* Adjust min-height for mobile columns */
     }
     /* Two player game columns stack vertically */
     .two-player-flex-container {
@@ -575,28 +620,23 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         gap: 15px;
     }
     #twoPlayerGameScreen .player-column {
-        min-width: unset; /* Remove min-width constraint on small screens */
-        max-width: 100%; /* Full width */
+        min-width: unset;
+        max-width: 100%;
     }
     /* Inner English/Chinese columns within each player's section also stack */
     .player-game-grid {
-        flex-direction: column; /* Stack English and Chinese columns within player */
+        flex-direction: column;
     }
     #twoPlayerGameScreen .player-game-grid .column-english,
     #twoPlayerGameScreen .player-game-grid .column-chinese {
         min-width: unset;
         max-width: 100%;
+        min-height: 80px; /* Adjust min-height for mobile inner columns */
     }
     .card {
-        padding: 10px;
-        min-height: 60px; /* Smaller min-height for mobile */
-        font-size: 1em;
-    }
-    .btn {
-        font-size: 1rem;
-        padding: 13px 25px;
-        margin: 12px auto;
-        width: 80%;
+        padding: 8px;
+        min-height: 50px;
+        font-size: 0.9em;
     }
     .modal-content {
         padding: 20px;
@@ -618,14 +658,20 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         font-size: 1.8rem;
     }
     .screen {
-        padding: 20px; /* Reduce screen padding on small screens */
-        min-height: 400px; /* Adjust min-height for smaller screens to reduce scrolling */
+        padding: 20px;
+        /* Removed fixed min-height for screens on mobile */
+    }
+    .word-list-container {
+        max-height: 250px;
+    }
+    .tutorial-content {
+        padding: 15px; /* Smaller padding for tutorial content on mobile */
     }
 }
 @media (max-width: 480px) {
     .card {
-        font-size: 0.8em; /* Even smaller font on very small screens */
-        min-height: 50px;
+        font-size: 0.75em;
+        min-height: 40px;
     }
     h1 {
         font-size: 1.6rem;
@@ -634,9 +680,13 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
         font-size: 1em;
     }
     .container {
-        padding: 10px; /* Further reduce container padding on very small screens */
+        padding: 5px;
     }
     .screen {
-        padding: 15px; /* Further reduce screen padding */
+        padding: 10px;
+    }
+    .btn {
+        font-size: 0.9rem;
+        padding: 10px 20px;
     }
 }

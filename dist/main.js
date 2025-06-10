@@ -52,10 +52,12 @@ let currentConfirmCallback = null;
 const player1EnglishColumn = document.getElementById('player1EnglishColumn');
 const player1ChineseColumn = document.getElementById('player1ChineseColumn');
 const player1ScoreDisplay = document.getElementById('player1ScoreDisplay');
+const player1Status = document.getElementById('player1Status'); // New status element
 
 const player2EnglishColumn = document.getElementById('player2EnglishColumn');
 const player2ChineseColumn = document.getElementById('player2ChineseColumn');
 const player2ScoreDisplay = document.getElementById('player2ScoreDisplay');
+const player2Status = document.getElementById('player2Status'); // New status element
 
 // Player 1 state
 let player1SelectedEnglishCard = null;
@@ -257,13 +259,22 @@ async function savePairCountSetting() {
     displayMessage(`每局单词对数已设置为 ${pairCount} 对。`, 'success', '设置已保存');
 }
 
+async function saveSettingToDB(key, value) {
+    try {
+        await sqlite.saveSettingToDB(key, value.toString());
+        console.log(`Setting '${key}' saved with value: ${value}`);
+    } catch (error) {
+        console.error(`Error saving setting '${key}':`, error);
+    }
+}
+
+
 // --- Single Player Game Logic ---
 function initGame() {
     if (!dataLoaded) { // Check if data is loaded
         displayMessage('游戏正在加载中，请稍候...', 'info');
         return;
     }
-
     if (wordPairs.length < pairCount) {
         displayMessage(`单词库中至少需要 ${pairCount} 个单词才能开始游戏，当前只有 ${wordPairs.length} 个。请添加更多单词。`, 'error');
         showScreen(editScreen); // Go to edit screen to add more words
@@ -287,7 +298,7 @@ function initGame() {
     showScreen(gameScreen);
 
     gamesPlayed++;
-    sqlite.saveSettingToDB('gamesPlayed', gamesPlayed); // Save updated gamesPlayed
+    saveSettingToDB('gamesPlayed', gamesPlayed); // Save updated gamesPlayed
     updateStats(); // Update stats on home screen after game starts
 
     timerInterval = setInterval(() => {
@@ -295,28 +306,6 @@ function initGame() {
         timeDisplay.textContent = timer;
     }, 1000);
     console.log('Single player game initialized.');
-}
-
-function renderSinglePlayerGameCards(pairs) {
-    englishColumn.innerHTML = '';
-    chineseColumn.innerHTML = '';
-
-    const englishWords = pairs.map(pair => ({value: pair.english, match: pair.chinese}));
-    const chineseWords = pairs.map(pair => ({value: pair.chinese, match: pair.english}));
-
-    // Shuffle independently for display
-    englishWords.sort(() => 0.5 - Math.random());
-    chineseWords.sort(() => 0.5 - Math.random());
-
-    englishWords.forEach(cardData => {
-        const card = createCardElement(cardData.value, 'english', cardData.match, 'single');
-        englishColumn.appendChild(card);
-    });
-
-    chineseWords.forEach(cardData => {
-        const card = createCardElement(cardData.value, 'chinese', cardData.match, 'single');
-        chineseColumn.appendChild(card);
-    });
 }
 
 // Function to create a card element
@@ -340,22 +329,44 @@ function createCardElement(value, type, match, gameType, playerNum = null) {
     return card;
 }
 
+function renderSinglePlayerGameCards(pairs) {
+    englishColumn.innerHTML = '';
+    chineseColumn.innerHTML = '';
+
+    const englishWords = pairs.map(pair => ({ value: pair.english, match: pair.chinese }));
+    const chineseWords = pairs.map(pair => ({ value: pair.chinese, match: pair.english }));
+
+    // Shuffle independently for display
+    englishWords.sort(() => 0.5 - Math.random());
+    chineseWords.sort(() => 0.5 - Math.random());
+
+    englishWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'english', cardData.match, 'single');
+        englishColumn.appendChild(card);
+    });
+
+    chineseWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'chinese', cardData.match, 'single');
+        chineseColumn.appendChild(card);
+    });
+}
+
 function handleSinglePlayerCardClick(cardElement) {
-    if (cardElement.classList.contains('matched')) {
-        return; // Already matched
+    if (cardElement.classList.contains('matched') || cardElement.classList.contains('error-match')) {
+        return; // Already matched or currently in error state
     }
 
     const cardType = cardElement.dataset.type;
 
-    // Remove 'selected' from previously selected card of the same type
+    // Remove 'selected' and 'error-match' from previously selected card of the same type
     if (cardType === 'english') {
         if (selectedEnglishCard) {
-            selectedEnglishCard.classList.remove('selected');
+            selectedEnglishCard.classList.remove('selected', 'error-match');
         }
         selectedEnglishCard = cardElement;
     } else { // chinese
         if (selectedChineseCard) {
-            selectedChineseCard.classList.remove('selected');
+            selectedChineseCard.classList.remove('selected', 'error-match');
         }
         selectedChineseCard = cardElement;
     }
@@ -364,7 +375,14 @@ function handleSinglePlayerCardClick(cardElement) {
 
     // Check for match if both English and Chinese cards are selected
     if (selectedEnglishCard && selectedChineseCard) {
-        checkSinglePlayerMatch();
+        // Prevent further clicks until check is done
+        englishColumn.style.pointerEvents = 'none';
+        chineseColumn.style.pointerEvents = 'none';
+        setTimeout(() => {
+            checkSinglePlayerMatch();
+            englishColumn.style.pointerEvents = 'auto';
+            chineseColumn.style.pointerEvents = 'auto';
+        }, 500); // Small delay to allow user to see selection before checking
     }
 }
 
@@ -372,20 +390,21 @@ function checkSinglePlayerMatch() {
     const englishValue = selectedEnglishCard.dataset.value;
     const chineseValue = selectedChineseCard.dataset.value;
 
-    // Check if values match correctly (e.g., english matches chinese, and chinese matches english)
     const isMatch = wordPairs.some(pair =>
         pair.english === englishValue && pair.chinese === chineseValue
     );
 
     if (isMatch) {
-        // Match found
         selectedEnglishCard.classList.add('matched');
         selectedChineseCard.classList.add('matched');
+
         // Visually remove cards after a short delay
         setTimeout(() => {
             selectedEnglishCard.remove();
             selectedChineseCard.remove();
-        }, 300); // Quick fade out
+            selectedEnglishCard = null; // Ensure references are cleared after removal
+            selectedChineseCard = null;
+        }, 300); // Quick fade out and removal
 
         matchedPairs++;
         score += 10;
@@ -396,24 +415,26 @@ function checkSinglePlayerMatch() {
             displayMessage(`恭喜！您在 ${timer} 秒内完成了游戏！您的得分是 ${score}！`, 'success', '游戏结束');
             if (score > highScore) {
                 highScore = score;
-                sqlite.saveSettingToDB('highScore', highScore); // Save updated high score
+                saveSettingToDB('highScore', highScore);
                 displayMessage(`恭喜！您打破了最高分记录！新最高分是 ${highScore}！`, 'success', '新纪录！');
             }
-            updateStats(); // Update stats on home screen after game ends
+            updateStats();
         }
     } else {
-        // No match, deselect
-        score = Math.max(0, score - 2); // Deduct points for incorrect match
+        score = Math.max(0, score - 2);
         scoreDisplay.textContent = score;
-        displayMessage(`不匹配！${englishValue} 和 ${chineseValue} 不是一对。`, 'error');
+
+        // Apply error effect
+        selectedEnglishCard.classList.add('error-match');
+        selectedChineseCard.classList.add('error-match');
 
         setTimeout(() => {
-            selectedEnglishCard.classList.remove('selected');
-            selectedChineseCard.classList.remove('selected');
-        }, 500); // Allow some time to see the cards before deselecting
+            selectedEnglishCard.classList.remove('selected', 'error-match');
+            selectedChineseCard.classList.remove('selected', 'error-match');
+            selectedEnglishCard = null; // Clear references
+            selectedChineseCard = null;
+        }, 800); // Allow time for shake animation and then deselect
     }
-    selectedEnglishCard = null; // Reset selected cards
-    selectedChineseCard = null;
 }
 
 // --- Two-Player Game Logic ---
@@ -434,12 +455,15 @@ function initTwoPlayerGame() {
     player1SelectedEnglishCard = null;
     player1SelectedChineseCard = null;
     player1ScoreDisplay.textContent = `得分: ${player1Score}`;
+    player1Status.textContent = ''; // Clear status
 
     player2Score = 0;
     player2MatchedPairs = 0;
     player2SelectedEnglishCard = null;
     player2SelectedChineseCard = null;
     player2ScoreDisplay.textContent = `得分: ${player2Score}`;
+    player2Status.textContent = ''; // Clear status
+
 
     const totalGamePairs = pairCount; // Total pairs for the game
     player1TotalPairs = totalGamePairs;
@@ -452,7 +476,7 @@ function initTwoPlayerGame() {
     showScreen(twoPlayerGameScreen);
 
     gamesPlayed++;
-    sqlite.saveSettingToDB('gamesPlayed', gamesPlayed);
+    saveSettingToDB('gamesPlayed', gamesPlayed);
     updateStats();
     console.log('Two player game initialized.');
 }
@@ -463,8 +487,8 @@ function renderTwoPlayerGameCards(pairs) {
     player2EnglishColumn.innerHTML = '';
     player2ChineseColumn.innerHTML = '';
 
-    const player1EnglishWords = pairs.map(pair => ({value: pair.english, match: pair.chinese}));
-    const player1ChineseWords = pairs.map(pair => ({value: pair.chinese, match: pair.english}));
+    const player1EnglishWords = pairs.map(pair => ({ value: pair.english, match: pair.chinese }));
+    const player1ChineseWords = pairs.map(pair => ({ value: pair.chinese, match: pair.english }));
     player1EnglishWords.sort(() => 0.5 - Math.random());
     player1ChineseWords.sort(() => 0.5 - Math.random());
 
@@ -477,9 +501,8 @@ function renderTwoPlayerGameCards(pairs) {
         player1ChineseColumn.appendChild(card);
     });
 
-    // Player 2 uses the same set of words but rendered independently
-    const player2EnglishWords = pairs.map(pair => ({value: pair.english, match: pair.chinese}));
-    const player2ChineseWords = pairs.map(pair => ({value: pair.chinese, match: pair.english}));
+    const player2EnglishWords = pairs.map(pair => ({ value: pair.english, match: pair.chinese }));
+    const player2ChineseWords = pairs.map(pair => ({ value: pair.chinese, match: pair.english }));
     player2EnglishWords.sort(() => 0.5 - Math.random());
     player2ChineseWords.sort(() => 0.5 - Math.random());
 
@@ -494,104 +517,123 @@ function renderTwoPlayerGameCards(pairs) {
 }
 
 
-// Central handler for two-player card clicks
 function handleTwoPlayerCardClick(cardElement) {
-    if (cardElement.classList.contains('matched')) {
-        return; // Already matched
+    if (cardElement.classList.contains('matched') || cardElement.classList.contains('error-match')) {
+        return; // Already matched or currently in error state
     }
 
     const player = parseInt(cardElement.dataset.player);
     const cardType = cardElement.dataset.type;
 
+    let selectedEnglish, selectedChinese;
+    let englishCol, chineseCol; // References to the specific columns for disabling pointer events
+
     if (player === 1) {
-        if (cardType === 'english') {
-            if (player1SelectedEnglishCard) player1SelectedEnglishCard.classList.remove('selected');
-            player1SelectedEnglishCard = cardElement;
-        } else { // chinese
-            if (player1SelectedChineseCard) player1SelectedChineseCard.classList.remove('selected');
-            player1SelectedChineseCard = cardElement;
-        }
-        cardElement.classList.add('selected');
+        selectedEnglish = player1SelectedEnglishCard;
+        selectedChinese = player1SelectedChineseCard;
+        englishCol = player1EnglishColumn;
+        chineseCol = player1ChineseColumn;
+    } else {
+        selectedEnglish = player2SelectedEnglishCard;
+        selectedChinese = player2SelectedChineseCard;
+        englishCol = player2EnglishColumn;
+        chineseCol = player2ChineseColumn;
+    }
 
-        // Check for match if both English and Chinese cards are selected for Player 1
-        if (player1SelectedEnglishCard && player1SelectedChineseCard) {
-            checkTwoPlayerMatch(player1SelectedEnglishCard, player1SelectedChineseCard, 1);
+    // Remove 'selected' and 'error-match' from previously selected card of the same type
+    if (cardType === 'english') {
+        if (selectedEnglish) {
+            selectedEnglish.classList.remove('selected', 'error-match');
         }
-    } else { // Player 2
-        if (cardType === 'english') {
-            if (player2SelectedEnglishCard) player2SelectedEnglishCard.classList.remove('selected');
-            player2SelectedEnglishCard = cardElement;
-        } else { // chinese
-            if (player2SelectedChineseCard) player2SelectedChineseCard.classList.remove('selected');
-            player2SelectedChineseCard = cardElement;
+        if (player === 1) player1SelectedEnglishCard = cardElement; else player2SelectedEnglishCard = cardElement;
+    } else { // chinese
+        if (selectedChinese) {
+            selectedChinese.classList.remove('selected', 'error-match');
         }
-        cardElement.classList.add('selected');
+        if (player === 1) player1SelectedChineseCard = cardElement; else player2SelectedChineseCard = cardElement;
+    }
+    cardElement.classList.add('selected');
 
-        // Check for match if both English and Chinese cards are selected for Player 2
-        if (player2SelectedEnglishCard && player2SelectedChineseCard) {
-            checkTwoPlayerMatch(player2SelectedEnglishCard, player2SelectedChineseCard, 2);
-        }
+    // Re-evaluate selected cards for the current player
+    if (player === 1) {
+        selectedEnglish = player1SelectedEnglishCard;
+        selectedChinese = player1SelectedChineseCard;
+    } else {
+        selectedEnglish = player2SelectedEnglishCard;
+        selectedChinese = player2SelectedChineseCard;
+    }
+
+    // Check for match if both English and Chinese cards are selected for the current player
+    if (selectedEnglish && selectedChinese) {
+        // Prevent further clicks for this player's columns until check is done
+        englishCol.style.pointerEvents = 'none';
+        chineseCol.style.pointerEvents = 'none';
+        setTimeout(() => {
+            checkTwoPlayerMatch(selectedEnglish, selectedChinese, player);
+            englishCol.style.pointerEvents = 'auto';
+            chineseCol.style.pointerEvents = 'auto';
+        }, 500); // Small delay to allow user to see selection before checking
     }
 }
 
 function checkTwoPlayerMatch(englishCardElement, chineseCardElement, playerNum) {
-    const englishWord = englishCardElement.dataset.value; // Get content directly
+    const englishWord = englishCardElement.dataset.value;
     const chineseWord = chineseCardElement.dataset.value;
 
-    // wordPairs is a global variable, fetched from Rust backend via loadWordsFromDB
     const isMatch = wordPairs.some(pair =>
         pair.english === englishWord && pair.chinese === chineseWord
     );
 
-    let message = '';
     if (isMatch) {
         englishCardElement.classList.add('matched');
         chineseCardElement.classList.add('matched');
-        englishCardElement.classList.remove('selected');
-        chineseCardElement.classList.remove('selected');
 
         // Visually remove cards after a short delay
         setTimeout(() => {
             englishCardElement.remove();
             chineseCardElement.remove();
+            if (playerNum === 1) {
+                player1SelectedEnglishCard = null;
+                player1SelectedChineseCard = null;
+            } else {
+                player2SelectedEnglishCard = null;
+                player2SelectedChineseCard = null;
+            }
         }, 300);
 
         if (playerNum === 1) {
             player1Score += 10;
             player1MatchedPairs++;
             player1ScoreDisplay.textContent = `得分: ${player1Score}`;
-            message = `玩家1：正确! ${englishWord} - ${chineseWord}`;
         } else {
             player2Score += 10;
             player2MatchedPairs++;
             player2ScoreDisplay.textContent = `得分: ${player2Score}`;
-            message = `玩家2：正确! ${englishWord} - ${chineseWord}`;
         }
-        displayMessage(message, 'success');
-
     } else {
-        englishCardElement.classList.remove('selected');
-        chineseCardElement.classList.remove('selected');
-
         if (playerNum === 1) {
             player1Score = Math.max(0, player1Score - 2);
             player1ScoreDisplay.textContent = `得分: ${player1Score}`;
-            message = `玩家1：错误! ${englishWord} 和 ${chineseWord} 不匹配`;
         } else {
             player2Score = Math.max(0, player2Score - 2);
             player2ScoreDisplay.textContent = `得分: ${player2Score}`;
-            message = `玩家2：错误! ${englishWord} 和 ${chineseWord} 不匹配`;
         }
-        displayMessage(message, 'error');
-    }
 
-    // Reset selected cards for the current player
-    if (playerNum === 1) {
-        player1SelectedEnglishCard = null;
-        player1SelectedChineseCard = null;
-    } else {
-        player2SelectedEnglishCard = null;
-        player2SelectedChineseCard = null;
+        // Apply error effect
+        englishCardElement.classList.add('error-match');
+        chineseCardElement.classList.add('error-match');
+
+        setTimeout(() => {
+            englishCardElement.classList.remove('selected', 'error-match');
+            chineseCardElement.classList.remove('selected', 'error-match');
+            if (playerNum === 1) {
+                player1SelectedEnglishCard = null;
+                player1SelectedChineseCard = null;
+            } else {
+                player2SelectedEnglishCard = null;
+                player2SelectedChineseCard = null;
+            }
+        }, 800); // Allow time for shake animation and then deselect
     }
 
     checkTwoPlayerGameEnd();
@@ -601,13 +643,28 @@ function checkTwoPlayerGameEnd() {
     const allPlayer1Matched = (player1MatchedPairs === player1TotalPairs);
     const allPlayer2Matched = (player2MatchedPairs === player2TotalPairs);
 
+    // Update individual player status
+    if (allPlayer1Matched && player1Status.textContent === '') { // Only set once
+        player1Status.textContent = '已完成!';
+    }
+    if (allPlayer2Matched && player2Status.textContent === '') { // Only set once
+        player2Status.textContent = '已完成!';
+    }
+
     if (allPlayer1Matched && allPlayer2Matched) {
-        displayMessage(`双人游戏结束！玩家1得分: ${player1Score}，玩家2得分: ${player2Score}`, 'info', '游戏结束');
-        // You can add logic here to determine the winner
-    } else if (allPlayer1Matched) {
-        displayMessage('玩家1已完成所有配对！等待玩家2...', 'info');
-    } else if (allPlayer2Matched) {
-        displayMessage('玩家2已完成所有配对！等待玩家1...', 'info');
+        let message = '';
+        let title = '游戏结束';
+        if (player1Score > player2Score) {
+            message = `玩家1获胜！得分: ${player1Score} vs ${player2Score}`;
+            title = '玩家1胜利！';
+        } else if (player2Score > player1Score) {
+            message = `玩家2获胜！得分: ${player2Score} vs ${player1Score}`;
+            title = '玩家2胜利！';
+        } else {
+            message = `平局！两位玩家得分都是 ${player1Score}`;
+            title = '平局！';
+        }
+        displayMessage(message, 'info', title);
     }
 }
 
@@ -676,7 +733,7 @@ if (pairCountSelect && customPairCountInput) {
     });
 
     customPairCountInput.addEventListener('change', () => {
-        const value = parseInt(customPairCountInput.value, 10); // Corrected ID
+        const value = parseInt(customPairCountInput.value, 10);
         if (isNaN(value) || value < 4) {
             customPairCountInput.value = 4;
         } else if (value > 50) {
