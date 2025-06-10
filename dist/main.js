@@ -1,5 +1,8 @@
+import {SQLiteHandler} from './sqlite.js';
 
-import {loadSettingFromDB, loadWordsFromDB} from './sqlite.js';
+const tauri = window.__TAURI__;
+const Database = tauri.sql;
+const filename = 'words.db';
 
 let wordPairs = []; // Array of { english, chinese } objects loaded from DB
 let currentCards = []; // Cards for the current single player game
@@ -52,6 +55,7 @@ const player2EnglishWordsDiv = document.getElementById('player2EnglishWords');
 const player2ChineseWordsDiv = document.getElementById('player2ChineseWords');
 const player2ScoreDisplay = document.getElementById('player2ScoreDisplay'); // Updated ID
 
+
 // Player 1 state
 let player1SelectedEnglishCard = null;
 let player1SelectedChineseCard = null;
@@ -66,8 +70,10 @@ let player2Score = 0;
 let player2MatchedPairs = 0;
 let player2TotalPairs = 0;
 
+let sqlite;
+// 仅用于控制前端是否可以进行游戏操作，防止在数据未加载前就开始游戏
+let dataLoaded = false;
 
-// Function to display custom message modal
 function displayMessage(message, type = 'info', title = '提示') {
     messageModalTitle.textContent = title;
     messageModalBody.innerHTML = `<p>${message}</p>`; // Use innerHTML for simple text or basic HTML
@@ -76,7 +82,6 @@ function displayMessage(message, type = 'info', title = '提示') {
     console.log(`Displaying message: ${message}`);
 }
 
-// Function to show custom confirm modal
 function showConfirmModal(message, onConfirm, onCancel = null) {
     confirmModalTitle.textContent = '确认操作'; // Default title
     confirmModalBody.textContent = message;
@@ -91,12 +96,10 @@ function showConfirmModal(message, onConfirm, onCancel = null) {
     };
 }
 
-// Add event listener for message modal close button
 messageModalCloseBtn.addEventListener('click', () => {
     messageModal.classList.remove('active');
 });
 
-// Add event listener for confirm modal confirm button
 confirmModalConfirmBtn.addEventListener('click', () => {
     confirmModal.classList.remove('active');
     if (currentConfirmCallback) {
@@ -105,8 +108,6 @@ confirmModalConfirmBtn.addEventListener('click', () => {
     }
 });
 
-
-// Function to switch between screens
 function showScreen(screenToShow) {
     const screens = [homeScreen, gameScreen, editScreen, tutorialScreen, twoPlayerGameScreen];
 
@@ -117,18 +118,13 @@ function showScreen(screenToShow) {
             screen.classList.remove('active');
         }
     });
+
     // 当切换到主页时，确保统计数据是最新的
     if (screenToShow === homeScreen) {
         updateStats();
     }
 }
 
-// Flag to indicate if DB is fully initialized and ready for operations
-// 在 Tauri 中，数据库在 Rust 后端初始化，前端不需直接检查
-// 仅用于控制前端是否可以进行游戏操作，防止在数据未加载前就开始游戏
-let dataLoaded = false;
-
-// Function to initialize the application (load data and settings)
 async function initializeApp() {
     if (dataLoaded) { // Ensure it runs only once
         console.log('initializeApp: Data already loaded. Skipping.');
@@ -140,29 +136,26 @@ async function initializeApp() {
     try {
         // 在 Tauri 中，调用 Rust 后端的 init_db 命令来确保数据库表被创建和默认数据被插入
         // await invoke('init_db');
-        console.log('Rust 后端数据库初始化完成.');
+        console.log('initializeApp: SQLite database initialized.');
 
-        loadWordsFromDB(); // 加载单词
+        const firstTime = await sqlite.getSettingFromDB('firstTime');
 
-        dataLoaded = true; // 标记数据已加载
-        console.log('所有必要数据和功能已加载。');
-
-        // After successful initialization, set the initial screen
-        const firstTime = loadSettingFromDB('firstTime'); // 直接等待结果
-        // 'true' 是为了兼容旧的 null 或未设置的情况
-        if (firstTime === null || firstTime === 'true') { // 确保是 'true' 字符串或 null (首次启动)
-            await saveSettingToDB('firstTime', 'false'); // 保存设置
+        if (!firstTime || !firstTime.length) {
+            await sqlite.saveSettingToDB('firstTime', 'false'); // 保存设置
             showScreen(tutorialScreen);
         } else {
             showScreen(homeScreen);
         }
 
+        sqlite.loadWordsFromDB(); // 加载单词
+        dataLoaded = true; // 标记数据已加载
+
+        console.log('initializeApp: Data and settings loaded.');
     } catch (err) {
-        console.error('加载应用数据失败:', err);
+        console.error('initializeApp: Error loading data and settings:', err);
         displayMessage('加载应用数据失败。请尝试重新启动应用。', 'error');
     }
 }
-
 
 // Function to update stats on the home screen
 function updateStats() {
@@ -175,6 +168,7 @@ function updateStats() {
         pairCountSelect.value = pairCount;
         customPairCountInput.value = pairCount;
     }
+
     console.log('Stats updated.');
 }
 
@@ -213,7 +207,7 @@ function initGame() {
     showScreen(gameScreen);
 
     gamesPlayed++;
-    saveSettingToDB('gamesPlayed', gamesPlayed); // Save updated gamesPlayed
+    sqlite.saveSettingToDB('gamesPlayed', gamesPlayed); // Save updated gamesPlayed
     updateStats(); // Update stats on home screen after game starts
 
     timerInterval = setInterval(() => {
@@ -552,7 +546,8 @@ function renderWordList() {
     wordList.querySelectorAll('.edit-btn').forEach(button => {
         button.addEventListener('click', (event) => {
             const englishToEdit = event.currentTarget.dataset.english;
-            const chineseToEdit = event.currentTarget.dataset.dataset.chinese;
+            const chineseToEdit = event.currentTarget.dataset.chinese;
+
             document.getElementById('englishWord').value = englishToEdit;
             document.getElementById('chineseMeaning').value = chineseToEdit;
             document.getElementById('englishWord').focus();
@@ -562,14 +557,13 @@ function renderWordList() {
     wordList.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', (event) => {
             const englishToDelete = event.currentTarget.dataset.english;
-            // Use custom confirm modal
+
             showConfirmModal(`确定要删除单词 '${englishToDelete}' 吗？`, () => {
-                deleteWordFromDB(englishToDelete); // User confirmed deletion
+                sqlite.deleteWordFromDB(englishToDelete); // User confirmed deletion
             });
         });
     });
 }
-
 
 // Event Listeners for buttons
 document.getElementById('startGameBtn').addEventListener('click', initGame);
@@ -597,8 +591,15 @@ document.getElementById('resetTwoPlayerGameBtn').addEventListener('click', () =>
     });
 });
 
-document.getElementById('addWordBtn').addEventListener('click', () => {
-    saveWordToDB();
+document.getElementById('addWordBtn').addEventListener('click', (event) => {
+    const englishToEdit = document.getElementById('englishWord').value;
+    const chineseToEdit = document.getElementById('chineseMeaning').value;
+
+    if (englishToEdit && chineseToEdit) {
+        sqlite.saveWordToDB(englishToEdit, chineseToEdit);
+    } else {
+        displayMessage('单词或中文不能为空，请检查输入。', 'error');
+    }
 });
 
 document.getElementById('backToHomeFromGame').addEventListener('click', () => {
@@ -639,5 +640,16 @@ if (pairCountSelect && customPairCountInput) {
 // Initial application setup on DOMContentLoaded
 window.addEventListener('DOMContentLoaded', () => {
     console.log('DOMContentLoaded event fired. Starting initializeApp.');
-    initializeApp(); // This will handle all initial DB loading, settings, and screen display.
+
+    tauri.path.resolve('.').then(path => {
+        tauri.path.join(path, filename).then(result => {
+            console.log('SQLite database path:', result);
+
+            Database.load(`sqlite:${result}`).then((db) => {
+                sqlite = new SQLiteHandler(db);
+
+                initializeApp();
+            });
+        });
+    });
 });

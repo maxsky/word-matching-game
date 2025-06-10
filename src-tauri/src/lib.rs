@@ -1,11 +1,9 @@
-#[cfg_attr(mobile, tauri::mobile_entry_point)]
-
+#[allow(unused_imports)]
 use serde_json;
 use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
-fn get_migrations() -> Vec<Migration>
-{
+fn get_migrations() -> Vec<Migration> {
     vec![
         Migration {
             version: 1,
@@ -30,6 +28,7 @@ fn get_migrations() -> Vec<Migration>
     ]
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
