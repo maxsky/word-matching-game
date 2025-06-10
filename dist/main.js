@@ -6,7 +6,8 @@ const filename = 'words.db';
 
 let wordPairs = []; // Array of { english, chinese } objects loaded from DB
 let currentCards = []; // Cards for the current single player game
-let selectedCards = []; // Currently selected cards in single player
+let selectedEnglishCard = null; // Currently selected English card in single player
+let selectedChineseCard = null; // Currently selected Chinese card in single player
 let matchedPairs = 0; // Count of matched pairs in single player
 let score = 0;
 let timer = 0;
@@ -15,19 +16,20 @@ let gamesPlayed = 0;
 let highScore = 0;
 let pairCount = 8; // Default number of pairs for a game
 
-// UI elements (re-declare for clarity, ensure they are accessible)
+// UI elements
 const homeScreen = document.getElementById('homeScreen');
 const gameScreen = document.getElementById('gameScreen');
 const editScreen = document.getElementById('editScreen');
 const tutorialScreen = document.getElementById('tutorialScreen');
-const twoPlayerGameScreen = document.getElementById('twoPlayerGameScreen'); // Added for two-player game
+const twoPlayerGameScreen = document.getElementById('twoPlayerGameScreen');
 
 const totalWordsDisplay = document.getElementById('totalWords');
 const gamesPlayedDisplay = document.getElementById('gamesPlayedDisplay');
 const highScoreDisplay = document.getElementById('highScoreDisplay');
 const timeDisplay = document.getElementById('time');
 const scoreDisplay = document.getElementById('score');
-const cardsGrid = document.getElementById('cardsGrid'); // For single player
+const englishColumn = document.getElementById('englishColumn'); // For single player English words
+const chineseColumn = document.getElementById('chineseColumn'); // For single player Chinese words
 const wordList = document.getElementById('wordList'); // For edit screen
 const pairCountSelect = document.getElementById('pairCountSelect');
 const customPairCountInput = document.getElementById('customPairCountInput');
@@ -47,14 +49,13 @@ const confirmModalCancelBtn = document.getElementById('confirmModalCancelBtn');
 let currentConfirmCallback = null;
 
 // Two-Player Specific Elements
-const player1EnglishWordsDiv = document.getElementById('player1EnglishWords');
-const player1ChineseWordsDiv = document.getElementById('player1ChineseWords');
-const player1ScoreDisplay = document.getElementById('player1ScoreDisplay'); // Updated ID
+const player1EnglishColumn = document.getElementById('player1EnglishColumn');
+const player1ChineseColumn = document.getElementById('player1ChineseColumn');
+const player1ScoreDisplay = document.getElementById('player1ScoreDisplay');
 
-const player2EnglishWordsDiv = document.getElementById('player2EnglishWords');
-const player2ChineseWordsDiv = document.getElementById('player2ChineseWords');
-const player2ScoreDisplay = document.getElementById('player2ScoreDisplay'); // Updated ID
-
+const player2EnglishColumn = document.getElementById('player2EnglishColumn');
+const player2ChineseColumn = document.getElementById('player2ChineseColumn');
+const player2ScoreDisplay = document.getElementById('player2ScoreDisplay');
 
 // Player 1 state
 let player1SelectedEnglishCard = null;
@@ -71,9 +72,10 @@ let player2MatchedPairs = 0;
 let player2TotalPairs = 0;
 
 let sqlite;
-// 仅用于控制前端是否可以进行游戏操作，防止在数据未加载前就开始游戏
+// Used to control whether the frontend can perform game operations, preventing the game from starting before data is loaded
 let dataLoaded = false;
 
+// --- Modal Functions ---
 function displayMessage(message, type = 'info', title = '提示') {
     messageModalTitle.textContent = title;
     messageModalBody.innerHTML = `<p>${message}</p>`; // Use innerHTML for simple text or basic HTML
@@ -108,6 +110,7 @@ confirmModalConfirmBtn.addEventListener('click', () => {
     }
 });
 
+// --- Screen Management ---
 function showScreen(screenToShow) {
     const screens = [homeScreen, gameScreen, editScreen, tutorialScreen, twoPlayerGameScreen];
 
@@ -119,7 +122,7 @@ function showScreen(screenToShow) {
         }
     });
 
-    // 当切换到主页时，确保统计数据是最新的
+    // When switching to home page, ensure stats are up-to-date
     if (screenToShow === homeScreen) {
         updateStats();
     }
@@ -131,7 +134,7 @@ function updateStats() {
     gamesPlayedDisplay.textContent = gamesPlayed;
     highScoreDisplay.textContent = highScore;
 
-    // 确保设置界面上的单词对数显示与当前值同步
+    // Ensure pair count display in settings is synchronized with current value
     if (pairCountSelect && customPairCountInput) {
         pairCountSelect.value = pairCount;
         customPairCountInput.value = pairCount;
@@ -140,6 +143,7 @@ function updateStats() {
     console.log('Stats updated.');
 }
 
+// --- Word List Management (Edit Screen) ---
 function renderWordList() {
     if (!dataLoaded) {
         displayMessage('数据库功能尚未准备好，无法加载单词列表。', 'warning');
@@ -207,22 +211,32 @@ async function initializeApp() {
     console.log('initializeApp: Starting data and settings loading.');
 
     try {
-        // 在 Tauri 中，调用 Rust 后端的 init_db 命令来确保数据库表被创建和默认数据被插入
+        // In Tauri, call the Rust backend's init_db command to ensure database tables are created and default data is inserted
         // await invoke('init_db');
         console.log('initializeApp: SQLite database initialized.');
 
-        const firstTime = await sqlite.getSettingFromDB('firstTime'); // 是否首次进入
+        const settings = await sqlite.getSettingFromDB()
 
-        if (!firstTime || !firstTime.length) {
-            await sqlite.saveSettingToDB('firstTime', 'false'); // 保存设置
-            showScreen(tutorialScreen); // 首次进入展示教程
-        } else {
-            showScreen(homeScreen); // 非首次显示主页
+        for (const item of settings) {
+            if (item.key_name === 'firstTime') {
+                if (item.value) {
+                    showScreen(homeScreen); // Show home page if not first time
+                } else {
+                    await sqlite.saveSettingToDB('firstTime', 'false'); // Save setting
+                    showScreen(tutorialScreen); // Show tutorial for the first time
+                }
+            } else if (item.key_name === 'gamesPlayed') {
+                gamesPlayed = parseInt(item.value, 10);
+            } else if (item.key_name === 'highScore') {
+                highScore = parseInt(item.value, 10);
+            } else if (item.key_name === 'pairCount') {
+                pairCount = parseInt(item.value, 10);
+            }
         }
 
-        dataLoaded = true; // 标记数据已加载
+        dataLoaded = true; // Mark data as loaded
 
-        await reloadWordList(); // 加载单词
+        await reloadWordList(); // Load words
 
         console.log('initializeApp: Data and settings loaded.');
     } catch (err) {
@@ -231,12 +245,25 @@ async function initializeApp() {
     }
 }
 
-// Single Player Game Logic
+async function savePairCountSetting() {
+    pairCount = parseInt(customPairCountInput.value, 10);
+    if (isNaN(pairCount) || pairCount < 4) {
+        pairCount = 4;
+    } else if (pairCount > 50) {
+        pairCount = 50;
+    }
+    customPairCountInput.value = pairCount; // Ensure input reflects the clamped value
+    await sqlite.saveSettingToDB('pairCount', pairCount.toString());
+    displayMessage(`每局单词对数已设置为 ${pairCount} 对。`, 'success', '设置已保存');
+}
+
+// --- Single Player Game Logic ---
 function initGame() {
-    if (!dataLoaded) { // 检查数据是否已加载
+    if (!dataLoaded) { // Check if data is loaded
         displayMessage('游戏正在加载中，请稍候...', 'info');
         return;
     }
+
     if (wordPairs.length < pairCount) {
         displayMessage(`单词库中至少需要 ${pairCount} 个单词才能开始游戏，当前只有 ${wordPairs.length} 个。请添加更多单词。`, 'error');
         showScreen(editScreen); // Go to edit screen to add more words
@@ -245,7 +272,8 @@ function initGame() {
 
     score = 0;
     matchedPairs = 0;
-    selectedCards = [];
+    selectedEnglishCard = null;
+    selectedChineseCard = null;
     clearInterval(timerInterval);
     timer = 0;
     timeDisplay.textContent = timer;
@@ -253,16 +281,9 @@ function initGame() {
 
     // Select random pairs for the game
     const shuffledWordPairs = [...wordPairs].sort(() => 0.5 - Math.random());
-    currentCards = shuffledWordPairs.slice(0, pairCount).flatMap(pair => [
-        {type: 'english', value: pair.english, match: pair.chinese},
-        {type: 'chinese', value: pair.chinese, match: pair.english}
-    ]);
-    currentCards.sort(() => 0.5 - Math.random()); // Shuffle again for card positions
+    currentCards = shuffledWordPairs.slice(0, pairCount); // Only need the pairs
 
-    // Set the data-pair-count attribute for CSS grid adjustments
-    cardsGrid.setAttribute('data-pair-count', pairCount);
-
-    renderGameCards(cardsGrid, currentCards, false); // Render for single player
+    renderSinglePlayerGameCards(currentCards);
     showScreen(gameScreen);
 
     gamesPlayed++;
@@ -276,79 +297,96 @@ function initGame() {
     console.log('Single player game initialized.');
 }
 
-function renderGameCards(targetElement, cardsData, isTwoPlayer = false) {
-    targetElement.innerHTML = '';
-    cardsData.forEach((cardData, index) => {
-        const card = document.createElement('div');
-        card.classList.add('card');
-        // Adjust card size based on number of pairs and screen size
-        const cardCount = cardsData.length;
-        let fontSize = 1.2; // Base font size
-        if (cardCount > 12) { // More cards, smaller font
-            fontSize = 1.2 - ((cardCount - 12) * 0.05); // Reduce font size gradually
-            fontSize = Math.max(0.8, fontSize); // Minimum font size
-        }
-        card.style.fontSize = `${fontSize}em`;
+function renderSinglePlayerGameCards(pairs) {
+    englishColumn.innerHTML = '';
+    chineseColumn.innerHTML = '';
 
-        card.dataset.index = index; // Store original index for identifying cards
-        card.dataset.type = cardData.type; // Store card type
-        card.dataset.value = cardData.value; // Store card value
-        card.dataset.match = cardData.match; // Store card match value
+    const englishWords = pairs.map(pair => ({value: pair.english, match: pair.chinese}));
+    const chineseWords = pairs.map(pair => ({value: pair.chinese, match: pair.english}));
 
-        if (isTwoPlayer) {
-            card.dataset.player = cardData.player; // Store player number for two-player game
-        }
+    // Shuffle independently for display
+    englishWords.sort(() => 0.5 - Math.random());
+    chineseWords.sort(() => 0.5 - Math.random());
 
-        const cardInner = document.createElement('div');
-        cardInner.classList.add('card-inner');
+    englishWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'english', cardData.match, 'single');
+        englishColumn.appendChild(card);
+    });
 
-        const cardFront = document.createElement('div');
-        cardFront.classList.add('card-face', 'card-front');
-        cardFront.textContent = '?'; // Display question mark on front
-
-        const cardBack = document.createElement('div');
-        cardBack.classList.add('card-face', 'card-back');
-        cardBack.textContent = cardData.value; // Display the word/meaning
-
-        cardInner.appendChild(cardFront);
-        cardInner.appendChild(cardBack);
-        card.appendChild(cardInner);
-
-        if (isTwoPlayer) {
-            card.addEventListener('click', (e) => handleTwoPlayerCardClick(card)); // Pass card element directly
-        } else {
-            card.addEventListener('click', () => flipCard(card, cardData));
-        }
-
-        targetElement.appendChild(card);
+    chineseWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'chinese', cardData.match, 'single');
+        chineseColumn.appendChild(card);
     });
 }
 
-// Single Player Flip Card Logic
-function flipCard(cardElement, cardData) {
-    if (selectedCards.length < 2 && !cardElement.classList.contains('flipped') && !cardElement.classList.contains('matched')) {
-        cardElement.classList.add('flipped', 'selected');
-        selectedCards.push({element: cardElement, data: cardData});
+// Function to create a card element
+function createCardElement(value, type, match, gameType, playerNum = null) {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.dataset.type = type;
+    card.dataset.value = value;
+    card.dataset.match = match;
+    if (playerNum) {
+        card.dataset.player = playerNum;
+    }
 
-        if (selectedCards.length === 2) {
-            setTimeout(checkMatch, 1000); // Check for match after 1 second
+    card.textContent = value; // Directly display the word/meaning
+
+    if (gameType === 'single') {
+        card.addEventListener('click', () => handleSinglePlayerCardClick(card));
+    } else if (gameType === 'twoPlayer') {
+        card.addEventListener('click', () => handleTwoPlayerCardClick(card));
+    }
+    return card;
+}
+
+function handleSinglePlayerCardClick(cardElement) {
+    if (cardElement.classList.contains('matched')) {
+        return; // Already matched
+    }
+
+    const cardType = cardElement.dataset.type;
+
+    // Remove 'selected' from previously selected card of the same type
+    if (cardType === 'english') {
+        if (selectedEnglishCard) {
+            selectedEnglishCard.classList.remove('selected');
         }
+        selectedEnglishCard = cardElement;
+    } else { // chinese
+        if (selectedChineseCard) {
+            selectedChineseCard.classList.remove('selected');
+        }
+        selectedChineseCard = cardElement;
+    }
+
+    cardElement.classList.add('selected');
+
+    // Check for match if both English and Chinese cards are selected
+    if (selectedEnglishCard && selectedChineseCard) {
+        checkSinglePlayerMatch();
     }
 }
 
-function checkMatch() {
-    const [card1, card2] = selectedCards;
-    const data1 = card1.data;
-    const data2 = card2.data;
+function checkSinglePlayerMatch() {
+    const englishValue = selectedEnglishCard.dataset.value;
+    const chineseValue = selectedChineseCard.dataset.value;
 
     // Check if values match correctly (e.g., english matches chinese, and chinese matches english)
-    // Also ensure that the selected cards are not the same card (e.g., clicked the same card twice)
-    if (data1.value === data2.match && data2.value === data1.match && card1.element !== card2.element) {
+    const isMatch = wordPairs.some(pair =>
+        pair.english === englishValue && pair.chinese === chineseValue
+    );
+
+    if (isMatch) {
         // Match found
-        card1.element.classList.add('matched');
-        card2.element.classList.add('matched');
-        card1.element.classList.remove('selected');
-        card2.element.classList.remove('selected');
+        selectedEnglishCard.classList.add('matched');
+        selectedChineseCard.classList.add('matched');
+        // Visually remove cards after a short delay
+        setTimeout(() => {
+            selectedEnglishCard.remove();
+            selectedChineseCard.remove();
+        }, 300); // Quick fade out
+
         matchedPairs++;
         score += 10;
         scoreDisplay.textContent = score;
@@ -358,28 +396,29 @@ function checkMatch() {
             displayMessage(`恭喜！您在 ${timer} 秒内完成了游戏！您的得分是 ${score}！`, 'success', '游戏结束');
             if (score > highScore) {
                 highScore = score;
-                saveSettingToDB('highScore', highScore); // Save updated high score
+                sqlite.saveSettingToDB('highScore', highScore); // Save updated high score
                 displayMessage(`恭喜！您打破了最高分记录！新最高分是 ${highScore}！`, 'success', '新纪录！');
             }
             updateStats(); // Update stats on home screen after game ends
         }
     } else {
-        // No match, flip back
-        card1.element.classList.remove('selected');
-        card2.element.classList.remove('selected');
-        setTimeout(() => {
-            card1.element.classList.remove('flipped');
-            card2.element.classList.remove('flipped');
-        }, 500); // Allow some time to see the cards before flipping back
+        // No match, deselect
         score = Math.max(0, score - 2); // Deduct points for incorrect match
         scoreDisplay.textContent = score;
+        displayMessage(`不匹配！${englishValue} 和 ${chineseValue} 不是一对。`, 'error');
+
+        setTimeout(() => {
+            selectedEnglishCard.classList.remove('selected');
+            selectedChineseCard.classList.remove('selected');
+        }, 500); // Allow some time to see the cards before deselecting
     }
-    selectedCards = []; // Reset selected cards
+    selectedEnglishCard = null; // Reset selected cards
+    selectedChineseCard = null;
 }
 
-// Two-Player Game Logic
+// --- Two-Player Game Logic ---
 function initTwoPlayerGame() {
-    if (!dataLoaded) { // 检查数据是否已加载
+    if (!dataLoaded) { // Check if data is loaded
         displayMessage('游戏正在加载中，请稍候...', 'info');
         return;
     }
@@ -402,70 +441,67 @@ function initTwoPlayerGame() {
     player2SelectedChineseCard = null;
     player2ScoreDisplay.textContent = `得分: ${player2Score}`;
 
-    // Randomly select pairs for each player, ensuring they are distinct if needed or just random from total
     const totalGamePairs = pairCount; // Total pairs for the game
     player1TotalPairs = totalGamePairs;
     player2TotalPairs = totalGamePairs;
 
     const shuffledPairs = [...wordPairs].sort(() => 0.5 - Math.random()).slice(0, totalGamePairs);
 
-    // Prepare cards for Player 1
-    const player1EnglishCardsData = shuffledPairs.map(pair => ({
-        type: 'english',
-        value: pair.english,
-        match: pair.chinese,
-        player: 1
-    }));
-    const player1ChineseCardsData = shuffledPairs.map(pair => ({
-        type: 'chinese',
-        value: pair.chinese,
-        match: pair.english,
-        player: 1
-    }));
-    player1EnglishCardsData.sort(() => 0.5 - Math.random());
-    player1ChineseCardsData.sort(() => 0.5 - Math.random());
-
-    // Prepare cards for Player 2 (using potentially the same words, but separate card instances)
-    const player2EnglishCardsData = shuffledPairs.map(pair => ({
-        type: 'english',
-        value: pair.english,
-        match: pair.chinese,
-        player: 2
-    }));
-    const player2ChineseCardsData = shuffledPairs.map(pair => ({
-        type: 'chinese',
-        value: pair.chinese,
-        match: pair.english,
-        player: 2
-    }));
-    player2EnglishCardsData.sort(() => 0.5 - Math.random());
-    player2ChineseCardsData.sort(() => 0.5 - Math.random());
-
-
-    // Render cards for each player in their respective sections
-    renderGameCards(player1EnglishWordsDiv, player1EnglishCardsData, true);
-    renderGameCards(player1ChineseWordsDiv, player1ChineseCardsData, true);
-    renderGameCards(player2EnglishWordsDiv, player2EnglishCardsData, true);
-    renderGameCards(player2ChineseWordsDiv, player2ChineseCardsData, true);
+    renderTwoPlayerGameCards(shuffledPairs);
 
     showScreen(twoPlayerGameScreen);
 
     gamesPlayed++;
-    saveSettingToDB('gamesPlayed', gamesPlayed);
+    sqlite.saveSettingToDB('gamesPlayed', gamesPlayed);
     updateStats();
     console.log('Two player game initialized.');
 }
 
+function renderTwoPlayerGameCards(pairs) {
+    player1EnglishColumn.innerHTML = '';
+    player1ChineseColumn.innerHTML = '';
+    player2EnglishColumn.innerHTML = '';
+    player2ChineseColumn.innerHTML = '';
+
+    const player1EnglishWords = pairs.map(pair => ({value: pair.english, match: pair.chinese}));
+    const player1ChineseWords = pairs.map(pair => ({value: pair.chinese, match: pair.english}));
+    player1EnglishWords.sort(() => 0.5 - Math.random());
+    player1ChineseWords.sort(() => 0.5 - Math.random());
+
+    player1EnglishWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'english', cardData.match, 'twoPlayer', 1);
+        player1EnglishColumn.appendChild(card);
+    });
+    player1ChineseWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'chinese', cardData.match, 'twoPlayer', 1);
+        player1ChineseColumn.appendChild(card);
+    });
+
+    // Player 2 uses the same set of words but rendered independently
+    const player2EnglishWords = pairs.map(pair => ({value: pair.english, match: pair.chinese}));
+    const player2ChineseWords = pairs.map(pair => ({value: pair.chinese, match: pair.english}));
+    player2EnglishWords.sort(() => 0.5 - Math.random());
+    player2ChineseWords.sort(() => 0.5 - Math.random());
+
+    player2EnglishWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'english', cardData.match, 'twoPlayer', 2);
+        player2EnglishColumn.appendChild(card);
+    });
+    player2ChineseWords.forEach(cardData => {
+        const card = createCardElement(cardData.value, 'chinese', cardData.match, 'twoPlayer', 2);
+        player2ChineseColumn.appendChild(card);
+    });
+}
+
+
 // Central handler for two-player card clicks
 function handleTwoPlayerCardClick(cardElement) {
+    if (cardElement.classList.contains('matched')) {
+        return; // Already matched
+    }
+
     const player = parseInt(cardElement.dataset.player);
     const cardType = cardElement.dataset.type;
-    const cardValue = cardElement.dataset.value;
-    const cardMatch = cardElement.dataset.match;
-
-    if (cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
-        return; // Card already flipped or matched
-    }
 
     if (player === 1) {
         if (cardType === 'english') {
@@ -475,7 +511,7 @@ function handleTwoPlayerCardClick(cardElement) {
             if (player1SelectedChineseCard) player1SelectedChineseCard.classList.remove('selected');
             player1SelectedChineseCard = cardElement;
         }
-        cardElement.classList.add('flipped', 'selected');
+        cardElement.classList.add('selected');
 
         // Check for match if both English and Chinese cards are selected for Player 1
         if (player1SelectedEnglishCard && player1SelectedChineseCard) {
@@ -489,7 +525,7 @@ function handleTwoPlayerCardClick(cardElement) {
             if (player2SelectedChineseCard) player2SelectedChineseCard.classList.remove('selected');
             player2SelectedChineseCard = cardElement;
         }
-        cardElement.classList.add('flipped', 'selected');
+        cardElement.classList.add('selected');
 
         // Check for match if both English and Chinese cards are selected for Player 2
         if (player2SelectedEnglishCard && player2SelectedChineseCard) {
@@ -499,10 +535,10 @@ function handleTwoPlayerCardClick(cardElement) {
 }
 
 function checkTwoPlayerMatch(englishCardElement, chineseCardElement, playerNum) {
-    const englishWord = englishCardElement.textContent; // Get content directly
-    const chineseWord = chineseCardElement.textContent;
+    const englishWord = englishCardElement.dataset.value; // Get content directly
+    const chineseWord = chineseCardElement.dataset.value;
 
-    // wordPairs 是全局变量，由 loadWordsFromDB 从 Rust 后端获取
+    // wordPairs is a global variable, fetched from Rust backend via loadWordsFromDB
     const isMatch = wordPairs.some(pair =>
         pair.english === englishWord && pair.chinese === chineseWord
     );
@@ -513,6 +549,12 @@ function checkTwoPlayerMatch(englishCardElement, chineseCardElement, playerNum) 
         chineseCardElement.classList.add('matched');
         englishCardElement.classList.remove('selected');
         chineseCardElement.classList.remove('selected');
+
+        // Visually remove cards after a short delay
+        setTimeout(() => {
+            englishCardElement.remove();
+            chineseCardElement.remove();
+        }, 300);
 
         if (playerNum === 1) {
             player1Score += 10;
@@ -530,11 +572,6 @@ function checkTwoPlayerMatch(englishCardElement, chineseCardElement, playerNum) 
     } else {
         englishCardElement.classList.remove('selected');
         chineseCardElement.classList.remove('selected');
-        // Only remove 'flipped' class after a short delay for visual feedback
-        setTimeout(() => {
-            englishCardElement.classList.remove('flipped');
-            chineseCardElement.classList.remove('flipped');
-        }, 500);
 
         if (playerNum === 1) {
             player1Score = Math.max(0, player1Score - 2);
@@ -575,7 +612,7 @@ function checkTwoPlayerGameEnd() {
 }
 
 
-// Event Listeners for buttons
+// --- Event Listeners for buttons ---
 document.getElementById('startGameBtn').addEventListener('click', initGame);
 
 document.getElementById('startTwoPlayerGameBtn').addEventListener('click', initTwoPlayerGame);
@@ -631,7 +668,7 @@ document.getElementById('backToHomeFromTutorial').addEventListener('click', () =
     showScreen(homeScreen);
 });
 
-// 单词对数设置事件
+// Word pair count settings event
 if (pairCountSelect && customPairCountInput) {
     pairCountSelect.addEventListener('change', () => {
         customPairCountInput.value = pairCountSelect.value;
@@ -639,7 +676,7 @@ if (pairCountSelect && customPairCountInput) {
     });
 
     customPairCountInput.addEventListener('change', () => {
-        const value = parseInt(customPairInput.value, 10);
+        const value = parseInt(customPairCountInput.value, 10); // Corrected ID
         if (isNaN(value) || value < 4) {
             customPairCountInput.value = 4;
         } else if (value > 50) {

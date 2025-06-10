@@ -11,9 +11,17 @@ export class SQLiteHandler {
      * @param key 设置名
      * @returns {Array|string}
      */
-    async getSettingFromDB(key) {
+    async getSettingFromDB(key = '') {
+        let value;
+
         try {
-            const value = await this.db.select('SELECT value FROM settings WHERE key_name = $1', [key]);
+            if (key) {
+                value = await this.db.select('SELECT value FROM settings WHERE key_name = $1;', [key]);
+            } else {
+                value = await this.db.select(`SELECT *
+                                              FROM settings
+                                              ORDER BY key_name;`);
+            }
 
             console.log(`getSettingFromDB: Setting '${key}' loaded, value: '${value}'`);
 
@@ -41,14 +49,6 @@ export class SQLiteHandler {
             );
 
             console.log(`saveSettingToDB: Setting '${key}' and value '${value}' saved.`);
-
-            if (key === 'gamesPlayed') {
-                gamesPlayed = parseInt(value, 10);
-            } else if (key === 'highScore') {
-                highScore = parseInt(value, 10);
-            } else if (key === 'pairCount') {
-                pairCount = parseInt(value, 10);
-            }
         } catch (e) {
             console.error(`saveSettingToDB: '${key}' and '${value}' save failed:`, e);
 

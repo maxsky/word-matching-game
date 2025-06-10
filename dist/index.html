@@ -62,8 +62,13 @@
             <div class="timer">时间: <span id="time">0</span>s</div>
             <div class="score">得分: <span id="score">0</span></div>
         </div>
-        <div class="game-container" id="cardsGrid">
-            <!-- Cards will be dynamically inserted here -->
+        <div class="single-player-game-grid">
+            <div class="column-english" id="englishColumn">
+                <!-- English cards will be dynamically inserted here -->
+            </div>
+            <div class="column-chinese" id="chineseColumn">
+                <!-- Chinese cards will be dynamically inserted here -->
+            </div>
         </div>
         <button class="btn btn-back" id="backToHomeFromGame"><i class="fas fa-home"></i> 返回主页</button>
         <button class="btn btn-secondary" id="resetGameBtn"><i class="fas fa-redo"></i> 重置游戏</button>
@@ -75,18 +80,22 @@
             <h2>双人单词配对挑战</h2>
             <p>两位玩家分别点击单词和意思进行匹配</p>
         </div>
-        <div class="game-container">
+        <div class="game-container two-player-flex-container">
             <div class="player-column">
                 <h2><i class="fas fa-user-alt"></i> 玩家1</h2>
-                <div class="player-card-section" id="player1EnglishWords"></div>
-                <div class="player-card-section" id="player1ChineseWords"></div>
+                <div class="player-game-grid">
+                    <div class="column-english" id="player1EnglishColumn"></div>
+                    <div class="column-chinese" id="player1ChineseColumn"></div>
+                </div>
                 <div class="player-score" id="player1ScoreDisplay">得分: 0</div>
             </div>
 
             <div class="player-column">
                 <h2><i class="fas fa-user-alt"></i> 玩家2</h2>
-                <div class="player-card-section" id="player2EnglishWords"></div>
-                <div class="player-card-section" id="player2ChineseWords"></div>
+                <div class="player-game-grid">
+                    <div class="column-english" id="player2EnglishColumn"></div>
+                    <div class="column-chinese" id="player2ChineseColumn"></div>
+                </div>
                 <div class="player-score" id="player2ScoreDisplay">得分: 0</div>
             </div>
         </div>
@@ -155,19 +164,19 @@
             <h3>单人游戏玩法：</h3>
             <ol>
                 <li>点击“开始单人游戏”按钮进入游戏界面。</li>
-                <li>您将看到一系列翻转的卡片。</li>
-                <li>每次点击两张卡片，使其翻开。</li>
-                <li>如果翻开的两张卡片是一个英语单词和其对应的中文意思（配对成功），它们将保持翻开并被标记。</li>
-                <li>如果不是配对，两张卡片将在几秒后自动翻转回去。</li>
+                <li>您将看到左侧一列英语单词，右侧一列中文意思。</li>
+                <li>每次选择一个英语单词和一个中文意思。</li>
+                <li>如果选择的两张卡片是一个英语单词和其对应的中文意思（配对成功），它们将直接消失。</li>
+                <li>如果不是配对，两张卡片将取消选中并短暂显示错误效果。</li>
                 <li>您的目标是在最短的时间内配对所有单词。</li>
                 <li>游戏结束时会显示您的得分和用时。</li>
             </ol>
             <h3>双人游戏玩法：</h3>
             <ol>
                 <li>点击“开始双人游戏”按钮进入双人游戏界面。</li>
-                <li>屏幕分为左右两部分，分别对应玩家1和玩家2。每个玩家有各自的单词和中文意思卡片区域。</li>
+                <li>屏幕分为左右两部分，分别对应玩家1和玩家2。每个玩家有各自的英语单词列和中文意思列。</li>
                 <li>两位玩家可以同时点击自己区域内的卡片进行配对。</li>
-                <li>配对逻辑与单人游戏相同，正确配对会增加玩家得分。</li>
+                <li>配对逻辑与单人游戏相同，正确配对会增加玩家得分并使卡片消失；错误配对则卡片短暂显示错误效果。</li>
                 <li>游戏目标是两位玩家都尽可能快地完成所有配对。</li>
             </ol>
             <h3>管理单词：</h3>
