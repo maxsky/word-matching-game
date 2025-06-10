@@ -42,19 +42,17 @@ export class SQLiteHandler {
 
             console.log(`saveSettingToDB: Setting '${key}' and value '${value}' saved.`);
 
-            if (key === 'gamesPlayed' && typeof gamesPlayed !== 'undefined') {
+            if (key === 'gamesPlayed') {
                 gamesPlayed = parseInt(value, 10);
-            } else if (key === 'highScore' && typeof highScore !== 'undefined') {
+            } else if (key === 'highScore') {
                 highScore = parseInt(value, 10);
-            } else if (key === 'pairCount' && typeof pairCount !== 'undefined') {
+            } else if (key === 'pairCount') {
                 pairCount = parseInt(value, 10);
             }
         } catch (e) {
             console.error(`saveSettingToDB: '${key}' and '${value}' save failed:`, e);
 
-            if (typeof displayMessage === 'function') {
-                displayMessage(`保存设置失败: ${e}`, 'error');
-            }
+            displayMessage(`保存设置失败: ${e}`, 'error');
         }
     }
 
@@ -67,23 +65,13 @@ export class SQLiteHandler {
         try {
             const words = await this.db.select('SELECT english, chinese FROM words ORDER BY english;');
 
-            if (typeof updateStats === 'function') {
-                updateStats();
-            }
-
-            if (typeof renderWordList === 'function') {
-                renderWordList();
-            }
-
             console.log(`loadWordsFromDB: Words loaded, total: ${words.length}.`);
 
             return words;
         } catch (e) {
             console.error('loadWordsFromDB: Error loading words:', e);
 
-            if (typeof displayMessage === 'function') {
-                displayMessage('加载单词失败，请尝试重新启动应用。', 'error');
-            }
+            displayMessage('加载单词失败，请尝试重新启动应用。', 'error');
 
             return [];
         }
@@ -109,9 +97,7 @@ export class SQLiteHandler {
         } catch (e) {
             console.error(`saveWordToDB: Saving word '${english}' to database failed: `, e);
 
-            if (typeof displayMessage === 'function') {
-                displayMessage('保存单词失败，请检查输入或重新启动应用。', 'error');
-            }
+            displayMessage('保存单词失败，请检查输入或重新启动应用。', 'error');
         }
     }
 
@@ -134,9 +120,7 @@ export class SQLiteHandler {
         } catch (e) {
             console.error(`deleteWordFromDB: Deleting word '${english}' from database failed:`, e);
 
-            if (typeof displayMessage === 'function') {
-                displayMessage('删除单词失败，请尝试重新启动应用。', 'error');
-            }
+            displayMessage('删除单词失败，请尝试重新启动应用。', 'error');
         }
     }
 }

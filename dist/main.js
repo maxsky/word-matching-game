@@ -125,38 +125,6 @@ function showScreen(screenToShow) {
     }
 }
 
-async function initializeApp() {
-    if (dataLoaded) { // Ensure it runs only once
-        console.log('initializeApp: Data already loaded. Skipping.');
-        return;
-    }
-
-    console.log('initializeApp: Starting data and settings loading.');
-
-    try {
-        // 在 Tauri 中，调用 Rust 后端的 init_db 命令来确保数据库表被创建和默认数据被插入
-        // await invoke('init_db');
-        console.log('initializeApp: SQLite database initialized.');
-
-        const firstTime = await sqlite.getSettingFromDB('firstTime');
-
-        if (!firstTime || !firstTime.length) {
-            await sqlite.saveSettingToDB('firstTime', 'false'); // 保存设置
-            showScreen(tutorialScreen);
-        } else {
-            showScreen(homeScreen);
-        }
-
-        sqlite.loadWordsFromDB(); // 加载单词
-        dataLoaded = true; // 标记数据已加载
-
-        console.log('initializeApp: Data and settings loaded.');
-    } catch (err) {
-        console.error('initializeApp: Error loading data and settings:', err);
-        displayMessage('加载应用数据失败。请尝试重新启动应用。', 'error');
-    }
-}
-
 // Function to update stats on the home screen
 function updateStats() {
     totalWordsDisplay.textContent = wordPairs.length;
@@ -170,6 +138,97 @@ function updateStats() {
     }
 
     console.log('Stats updated.');
+}
+
+function renderWordList() {
+    if (!dataLoaded) {
+        displayMessage('数据库功能尚未准备好，无法加载单词列表。', 'warning');
+        return;
+    }
+
+    wordList.innerHTML = '';
+
+    if (wordPairs.length === 0) {
+        wordList.innerHTML = '<p style="text-align: center; padding: 20px; color: #888;">暂无单词，请添加。</p>';
+        return;
+    }
+
+    wordPairs.forEach(pair => {
+        const wordItem = document.createElement('div');
+        wordItem.classList.add('word-item');
+        wordItem.innerHTML = `
+                <span><strong>${pair.english}</strong> - ${pair.chinese}</span>
+                <div class="word-actions">
+                    <button class="edit-btn" data-english="${pair.english}" data-chinese="${pair.chinese}" title="编辑"><i class="fas fa-edit"></i></button>
+                    <button class="delete-btn" data-english="${pair.english}" title="删除"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+        wordList.appendChild(wordItem);
+    });
+
+    // Add event listeners for edit and delete buttons
+    wordList.querySelectorAll('.edit-btn').forEach(button => {
+        button.addEventListener('click', (event) => {
+            document.getElementById('chineseMeaning').value = event.currentTarget.dataset.chinese;
+
+            let english = document.getElementById('englishWord');
+
+            english.value = event.currentTarget.dataset.english;
+            english.focus();
+        });
+    });
+
+    wordList.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const englishToDelete = event.currentTarget.dataset.english;
+
+            showConfirmModal(`确定要删除单词 '${englishToDelete}' 吗？`, () => {
+                sqlite.deleteWordFromDB(englishToDelete).then(() => {
+                    reloadWordList();
+                });
+            });
+        });
+    });
+}
+
+async function reloadWordList() {
+    wordPairs = await sqlite.loadWordsFromDB();
+
+    updateStats();
+    renderWordList();
+}
+
+async function initializeApp() {
+    if (dataLoaded) { // Ensure it runs only once
+        console.log('initializeApp: Data already loaded. Skipping.');
+        return;
+    }
+
+    console.log('initializeApp: Starting data and settings loading.');
+
+    try {
+        // 在 Tauri 中，调用 Rust 后端的 init_db 命令来确保数据库表被创建和默认数据被插入
+        // await invoke('init_db');
+        console.log('initializeApp: SQLite database initialized.');
+
+        const firstTime = await sqlite.getSettingFromDB('firstTime'); // 是否首次进入
+
+        if (!firstTime || !firstTime.length) {
+            await sqlite.saveSettingToDB('firstTime', 'false'); // 保存设置
+            showScreen(tutorialScreen); // 首次进入展示教程
+        } else {
+            showScreen(homeScreen); // 非首次显示主页
+        }
+
+        dataLoaded = true; // 标记数据已加载
+
+        await reloadWordList(); // 加载单词
+
+        console.log('initializeApp: Data and settings loaded.');
+    } catch (err) {
+        console.error('initializeApp: Error loading data and settings:', err);
+        displayMessage('加载应用数据失败。请尝试重新启动应用。', 'error');
+    }
 }
 
 // Single Player Game Logic
@@ -515,55 +574,6 @@ function checkTwoPlayerGameEnd() {
     }
 }
 
-// Edit Screen Logic (Render and Event listeners for adding/editing/deleting words)
-function renderWordList() {
-    if (!dataLoaded) { // 检查数据是否已加载
-        displayMessage('数据库功能尚未准备好，无法加载单词列表。', 'warning');
-        return;
-    }
-
-    wordList.innerHTML = ''; // Clear existing list
-
-    if (wordPairs.length === 0) {
-        wordList.innerHTML = '<p style="text-align: center; padding: 20px; color: #888;">暂无单词，请添加。</p>';
-        return;
-    }
-
-    wordPairs.forEach(pair => {
-        const wordItem = document.createElement('div');
-        wordItem.classList.add('word-item');
-        wordItem.innerHTML = `
-                <span><strong>${pair.english}</strong> - ${pair.chinese}</span>
-                <div class="word-actions">
-                    <button class="edit-btn" data-english="${pair.english}" data-chinese="${pair.chinese}" title="编辑"><i class="fas fa-edit"></i></button>
-                    <button class="delete-btn" data-english="${pair.english}" title="删除"><i class="fas fa-trash"></i></button>
-                </div>
-            `;
-        wordList.appendChild(wordItem);
-    });
-
-    // Add event listeners for edit and delete buttons
-    wordList.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
-            const englishToEdit = event.currentTarget.dataset.english;
-            const chineseToEdit = event.currentTarget.dataset.chinese;
-
-            document.getElementById('englishWord').value = englishToEdit;
-            document.getElementById('chineseMeaning').value = chineseToEdit;
-            document.getElementById('englishWord').focus();
-        });
-    });
-
-    wordList.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
-            const englishToDelete = event.currentTarget.dataset.english;
-
-            showConfirmModal(`确定要删除单词 '${englishToDelete}' 吗？`, () => {
-                sqlite.deleteWordFromDB(englishToDelete); // User confirmed deletion
-            });
-        });
-    });
-}
 
 // Event Listeners for buttons
 document.getElementById('startGameBtn').addEventListener('click', initGame);
@@ -596,7 +606,9 @@ document.getElementById('addWordBtn').addEventListener('click', (event) => {
     const chineseToEdit = document.getElementById('chineseMeaning').value;
 
     if (englishToEdit && chineseToEdit) {
-        sqlite.saveWordToDB(englishToEdit, chineseToEdit);
+        sqlite.saveWordToDB(englishToEdit, chineseToEdit).then(() => {
+            reloadWordList();
+        });
     } else {
         displayMessage('单词或中文不能为空，请检查输入。', 'error');
     }
