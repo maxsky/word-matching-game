@@ -634,7 +634,3 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log("DOMContentLoaded event fired. Starting initializeApp.");
     initializeApp(); // This will handle all initial DB loading, settings, and screen display.
 });
-
-// ======================================================
-// 你的其他 JavaScript 代码（例如事件监听器、游戏逻辑等）
-// ======================================================

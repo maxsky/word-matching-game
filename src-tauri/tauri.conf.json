@@ -1,17 +1,18 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "English Word Matching Game",
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "word-matching-game",
   "version": "0.1.0",
-  "identifier": "cc.maxsky.wordmatchinggame",
+  "identifier": "com.tauri.dev",
   "build": {
-    "frontendDist": "src",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeDevCommand": "yarn dev",
+    "beforeBuildCommand": "yarn build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../src"
   },
   "app": {
     "windows": [
       {
-        "title": "英语单词配对游戏",
+        "title": "word-matching-game",
         "width": 800,
         "height": 600,
         "resizable": true,

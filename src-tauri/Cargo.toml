@@ -1,0 +1,28 @@
+[package]
+name = "word-matching-game"
+version = "0.1.0"
+description = "A word matching game built with Tauri"
+authors = ["Max Sky"]
+license = "MIT"
+repository = ""
+edition = "2024"
+rust-version = "1.87.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.2.0", features = [] }
+
+[dependencies]
+log = "0.4.27"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "2.5.1", features = [] }
+tauri-plugin-log = "2.4.0"
+
+[dependencies.tauri-plugin-sql]
+features = ["sqlite"] # or "postgres", or "mysql"
+version = "2.2.0"
