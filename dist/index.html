@@ -91,7 +91,9 @@
                     <div class="column-english" id="player1EnglishColumn"></div>
                     <div class="column-chinese" id="player1ChineseColumn"></div>
                 </div>
-                <div class="player-score" id="player1ScoreDisplay">得分: 0 <span id="player1Status" class="player-completion-status"></span></div>
+                <div class="player-score" id="player1ScoreDisplay">得分: 0 <span id="player1Status"
+                                                                                 class="player-completion-status"></span>
+                </div>
             </div>
 
             <div class="player-column">
@@ -100,7 +102,9 @@
                     <div class="column-english" id="player2EnglishColumn"></div>
                     <div class="column-chinese" id="player2ChineseColumn"></div>
                 </div>
-                <div class="player-score" id="player2ScoreDisplay">得分: 0 <span id="player2Status" class="player-completion-status"></span></div>
+                <div class="player-score" id="player2ScoreDisplay">得分: 0 <span id="player2Status"
+                                                                                 class="player-completion-status"></span>
+                </div>
             </div>
         </div>
         <div style="text-align: center; margin-top: 30px;">
@@ -178,7 +182,7 @@
             <h3>双人游戏玩法：</h3>
             <ol>
                 <li>点击“开始双人游戏”按钮进入双人游戏界面。</li>
-                <li>屏幕分为左右两部分，分别对应玩家1和玩家2。每个玩家有各自的英语单词列和中文意思列。</li>
+                <li>屏幕分为左右两部分，分别对应 [玩家1] 和 [玩家2]。每个玩家有各自的英语单词列和中文意思列。</li>
                 <li>两位玩家可以同时点击自己区域内的卡片进行配对。</li>
                 <li>配对逻辑与单人游戏相同，正确配对会增加玩家得分并使卡片消失；错误配对则卡片短暂显示错误效果。</li>
                 <li>当其中一位玩家完成所有配对后，其得分旁会显示“已完成！”。</li>
@@ -187,14 +191,15 @@
             <h3>管理单词：</h3>
             <ul>
                 <li>点击“管理单词”按钮进入单词管理界面。</li>
-                <li>您可以添加新的英语单词和中文意思。如果单词已存在，系统会提示您是否更新。</li>
+                <li>您可以添加新的英语单词和中文意思。</li>
                 <li>在单词列表中，您可以编辑或删除已有的单词。</li>
-                <li>您还可以设置每局游戏的单词对数，选择预设值或自定义数量（4-50对）。</li>
+                <li>您还可以设置每局游戏的单词对数，选择预设值或自定义数量（4-20对）。</li>
             </ul>
             <h3>提示：</h3>
             <ul>
                 <li>通过反复游戏来巩固记忆。</li>
-                <li>您添加的单词会保存在浏览器中，下次打开游戏时依然可用。</li>
+                <li>您添加的单词会保存到同程序的 words.db 数据库中，下次打开游戏时依然可用。</li>
+                <li>如需复制到其它电脑使用，请将本程序以及 words.db 文件复制到目标电脑。</li>
             </ul>
         </div>
         <button class="btn btn-back" id="backToHomeFromTutorial"><i class="fas fa-home"></i> 返回主页</button>

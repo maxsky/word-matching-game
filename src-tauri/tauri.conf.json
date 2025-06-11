@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "word-matching-game",
+        "title": "英语单词配对游戏",
         "width": 1280,
         "height": 800,
         "resizable": true,

@@ -29,7 +29,7 @@ body {
     position: relative;
     display: flex; /* Make container a flex container */
     flex-direction: column; /* Stack header and screens vertically */
-    min-height: calc(100vh - 40px); /* Adjust min-height to fit viewport minus body padding */
+    min-height: calc(100vh - 100px); /* Adjust min-height to fit viewport minus body padding */
 }
 
 /* 头部样式 */
