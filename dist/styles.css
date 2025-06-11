@@ -78,7 +78,6 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 12px; /* Spacing between buttons */
     margin: 12px 0; /* Adjust margin to provide space */
 }
 
@@ -116,7 +115,7 @@ h1 {
     color: white;
     border: none;
     padding: 13px 25px;
-    /* margin: 12px; -- Removed individual button margin, now handled by .home-buttons gap */
+    margin: 15px;
     border-radius: 50px; /* 圆角按钮 */
     font-size: 1rem;
     cursor: pointer;
@@ -170,13 +169,11 @@ h1 {
 .single-player-game-grid {
     display: flex;
     gap: 20px;
-    margin-bottom: 20px;
     justify-content: center;
     flex-wrap: wrap;
     align-items: flex-start;
     flex-grow: 1; /* Allow the grid to take up available space */
     min-height: 0; /* Important for flex children with overflow-y auto */
-    padding-bottom: 10px; /* Add some padding at the bottom */
 }
 
 .column-english,
@@ -203,10 +200,9 @@ h1 {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 12px; /* Spacing between buttons */
-    margin-top: auto; /* Push buttons to the bottom if screen has extra space */
-    padding-top: 20px; /* Padding above buttons */
+    gap: 24px; /* Spacing between buttons */
     flex-shrink: 0; /* Prevent from shrinking */
+    margin-top: 15px;
 }
 
 .game-buttons .btn {
@@ -444,6 +440,12 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     white-space: nowrap;
 }
 
+/* Add margin to the add/update button in the form */
+#addWordBtn {
+    margin-top: 15px; /* Added margin to separate button from inputs */
+    margin-bottom: 15px;
+}
+
 .word-list-container {
     max-height: 400px; /* Base max-height */
     overflow-y: auto;
@@ -454,7 +456,55 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     margin-top: 20px;
     flex-grow: 1; /* Allow word list to grow */
     min-height: 0; /* Important for flex children with overflow-y auto */
+    padding: 10px; /* Added padding for better spacing inside the container */
 }
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center; /* Vertically center items */
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 1.0em;
+}
+
+.word-item:last-child {
+    border-bottom: none;
+}
+
+.word-item strong {
+    color: #1a2980;
+}
+
+.word-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.edit-btn, .delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 5px;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+}
+
+.edit-btn {
+    color: #28a745;
+}
+.edit-btn:hover {
+    background-color: #e6ffe6;
+}
+
+.delete-btn {
+    color: #dc3545;
+}
+.delete-btn:hover {
+    background-color: #ffe6e6;
+}
+
 
 /* Tutorial Screen */
 .tutorial-content {
