@@ -32,16 +32,19 @@ fn get_migrations() -> Vec<Migration> {
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
+            #[cfg(debug_assertions)] // 仅在调试(debug)版本中包含此代码
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
+                window.close_devtools();
+            }
+
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
-
-                // only for debug
-                let window = app.get_webview_window("main").unwrap();
-                window.open_devtools();
             }
             Ok(())
         })
