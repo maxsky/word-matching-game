@@ -279,12 +279,10 @@ h1 {
     background-color: #fefefe;
     border: 2px solid #ddd;
     border-radius: 10px;
-    padding: 12px;
-    min-height: 60px; /* Slightly reduced min-height for cards */
+    min-height: 50px; /* Slightly reduced min-height for cards */
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.1em;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -296,6 +294,8 @@ h1 {
     opacity: 1;
     box-sizing: border-box;
     flex-shrink: 0; /* Prevent cards from shrinking smaller than their content */
+    font-size: clamp(0.8rem, 1.2vw, 1.1rem); /* 基于屏幕宽度缩放字体 */
+    padding: clamp(6px, 1vh, 10px);
 }
 
 .card.selected {
