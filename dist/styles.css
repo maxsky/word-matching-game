@@ -188,7 +188,7 @@ h1 {
     border: 1px solid #ccc;
     border-radius: 10px;
     background-color: #f8f9fa;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     align-self: stretch; /* Make columns fill parent height */
     overflow-y: auto; /* Allow scrolling within columns if content overflows */
     flex-shrink: 0; /* Prevent individual cards from shrinking */
@@ -315,18 +315,28 @@ h1 {
 .card.error-match {
     border-color: #dc3545;
     background-color: #f8d7da;
-    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
     transform: translate3d(0, 0, 0);
     backface-visibility: hidden;
     perspective: 1000px;
 }
 
 @keyframes shake {
-    10%, 90% { transform: translate3d(-1px, 0, 0); }
-    20%, 80% { transform: translate3d(2px, 0, 0); }
-    30%, 70% { transform: translate3d(-4px, 0, 0); }
-    40%, 60% { transform: translate3d(4px, 0, 0); }
-    50% { transform: translate3d(-4px, 0, 0); }
+    10%, 90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+    20%, 80% {
+        transform: translate3d(2px, 0, 0);
+    }
+    30%, 70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+    40%, 60% {
+        transform: translate3d(4px, 0, 0);
+    }
+    50% {
+        transform: translate3d(-4px, 0, 0);
+    }
 }
 
 
@@ -343,10 +353,12 @@ h1 {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     flex-shrink: 0; /* Prevent scoreboard from shrinking */
 }
+
 .timer, .score {
     flex: 1;
     text-align: center;
 }
+
 .timer span, .score span {
     font-weight: bold;
     color: #4b6cb7;
@@ -361,9 +373,11 @@ h1 {
     margin-top: 10px;
     flex-shrink: 0; /* Prevent score display from shrinking */
 }
+
 .player-score span {
     color: #4b6cb7;
 }
+
 .player-completion-status {
     font-size: 0.9em;
     color: #28a745;
@@ -403,6 +417,7 @@ input[type="text"], input[type="number"], select { /* General input styling */
     border-radius: 5px;
     font-size: 1em;
 }
+
 input[type="text"]:focus, input[type="number"]:focus, select:focus {
     border-color: #4b6cb7;
     outline: none;
@@ -436,6 +451,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     flex-grow: 1;
     max-width: 120px;
 }
+
 .settings-row span {
     white-space: nowrap;
 }
@@ -444,6 +460,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 #addWordBtn {
     margin-top: 15px; /* Added margin to separate button from inputs */
     margin-bottom: 15px;
+    margin-left: 0;
 }
 
 .word-list-container {
@@ -494,6 +511,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 .edit-btn {
     color: #28a745;
 }
+
 .edit-btn:hover {
     background-color: #e6ffe6;
 }
@@ -501,6 +519,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
 .delete-btn {
     color: #dc3545;
 }
+
 .delete-btn:hover {
     background-color: #ffe6e6;
 }
@@ -520,19 +539,23 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     overflow-y: auto;
     min-height: 0; /* Important for flex children with overflow-y auto */
 }
+
 .tutorial-content h2 {
     color: #1a2980;
     margin-bottom: 15px;
     text-align: center;
     font-size: 1.8em;
 }
+
 .tutorial-content p {
     margin-bottom: 10px;
 }
+
 .tutorial-content ol, .tutorial-content ul {
     margin-left: 25px;
     margin-bottom: 15px;
 }
+
 .tutorial-content li {
     margin-bottom: 8px;
 }
@@ -546,7 +569,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -554,6 +577,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
 }
+
 .modal.active {
     opacity: 1;
     visibility: visible;
@@ -564,7 +588,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     margin: auto;
     padding: 30px;
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     max-width: 500px;
     width: 90%;
     text-align: center;
@@ -572,6 +596,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     transform: translateY(-20px);
     transition: transform 0.3s ease;
 }
+
 .modal.active .modal-content {
     transform: translateY(0);
 }
@@ -602,13 +627,14 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     cursor: pointer;
     transition: all 0.3s ease;
     border: none;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .modal-button.confirm {
     background-color: #28a745;
     color: white;
 }
+
 .modal-button.confirm:hover {
     background-color: #218838;
     transform: translateY(-2px);
@@ -618,6 +644,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     background-color: #dc3545;
     color: white;
 }
+
 .modal-button.cancel:hover {
     background-color: #c82333;
     transform: translateY(-2px);
@@ -640,6 +667,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     border-radius: 8px;
     margin-bottom: 20px;
 }
+
 .modal-message.info {
     background-color: #d1ecf1;
     color: #0c5460;
@@ -648,6 +676,7 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     border-radius: 8px;
     margin-bottom: 20px;
 }
+
 .modal-message p {
     margin: 0;
     font-size: 1em;
@@ -658,102 +687,127 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
     .container {
         min-height: unset; /* Allow container height to adjust on mobile */
     }
+
     .stats {
         flex-direction: column;
         gap: 10px;
     }
+
     .stat-item {
         min-width: unset;
     }
+
     .home-buttons {
         flex-direction: column; /* Stack buttons vertically on small screens */
         align-items: center; /* Center stacked buttons */
     }
+
     .btn {
         width: 80%; /* Make buttons take more width */
         margin: 6px auto; /* Adjust margin for stacked buttons */
     }
+
     /* Single player game columns stack vertically */
     .single-player-game-grid {
         flex-direction: column;
         gap: 15px;
     }
+
     .column-english, .column-chinese {
         min-width: 100%;
         max-width: 100%;
         min-height: 100px; /* Adjust min-height for mobile columns */
     }
+
     /* Two player game columns stack vertically */
     .two-player-flex-container {
         flex-direction: column;
         gap: 15px;
     }
+
     #twoPlayerGameScreen .player-column {
         min-width: unset;
         max-width: 100%;
     }
+
     /* Inner English/Chinese columns within each player's section also stack */
     .player-game-grid {
         flex-direction: column;
     }
+
     #twoPlayerGameScreen .player-game-grid .column-english,
     #twoPlayerGameScreen .player-game-grid .column-chinese {
         min-width: unset;
         max-width: 100%;
         min-height: 80px; /* Adjust min-height for mobile inner columns */
     }
+
     .card {
         padding: 8px;
         min-height: 50px;
         font-size: 0.9em;
     }
+
     .modal-content {
         padding: 20px;
     }
+
     .modal-content h3 {
         font-size: 1.5em;
     }
+
     .settings-row {
         flex-direction: column;
         align-items: flex-start;
     }
+
     .settings-row select,
     .settings-row input[type="number"] {
         margin-left: 0;
         width: 100%;
         max-width: unset;
     }
+
     h1 {
         font-size: 1.8rem;
     }
+
     .screen {
         padding: 20px;
         /* Removed fixed min-height for screens on mobile */
     }
+
     .word-list-container {
         max-height: 250px;
     }
+
     .tutorial-content {
         padding: 15px; /* Smaller padding for tutorial content on mobile */
     }
 }
+
 @media (max-width: 480px) {
     .card {
         font-size: 0.75em;
         min-height: 40px;
     }
+
     h1 {
         font-size: 1.6rem;
     }
+
     .subtitle {
         font-size: 1em;
     }
+
     .container {
         padding: 5px;
     }
+
     .screen {
         padding: 10px;
     }
+
     .btn {
         font-size: 0.9rem;
         padding: 10px 20px;

@@ -464,7 +464,6 @@ function initTwoPlayerGame() {
     player2ScoreDisplay.textContent = `得分: ${player2Score}`;
     player2Status.textContent = ''; // Clear status
 
-
     const totalGamePairs = pairCount; // Total pairs for the game
     player1TotalPairs = totalGamePairs;
     player2TotalPairs = totalGamePairs;
@@ -696,11 +695,17 @@ document.getElementById('resetTwoPlayerGameBtn').addEventListener('click', () =>
 });
 
 document.getElementById('addWordBtn').addEventListener('click', (event) => {
-    const englishToEdit = document.getElementById('englishWord').value;
-    const chineseToEdit = document.getElementById('chineseMeaning').value;
+    let english = document.getElementById('englishWord');
+    let chinese = document.getElementById('chineseMeaning');
+
+    const englishToEdit = english.value;
+    const chineseToEdit = chinese.value;
 
     if (englishToEdit && chineseToEdit) {
         sqlite.saveWordToDB(englishToEdit, chineseToEdit).then(() => {
+            english.value = '';
+            chinese.value = '';
+
             reloadWordList();
         });
     } else {
